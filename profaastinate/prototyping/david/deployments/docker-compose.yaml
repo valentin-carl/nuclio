@@ -4,11 +4,31 @@ name: profaastinate
 
 services:
   redis:
-    image: redis:alpine
+    image: redis:alpine3.18
     ports:
-      - 6379:6379
+      - "6379:6379"
     env_file:
       ../envs/.redis.env
     volumes:
       - ../../../../docker/nuclio/redis/data:/data
-    restart: always
+
+  postgres:
+    image: postgres:alpine3.18
+    ports:
+      - "5432:5432"
+    env_file:
+      - ../envs/.postgres.env
+    volumes:
+      - ../../../../docker/nuclio/postgres/data:/var/lib/postgresql/data
+
+  sqlite:
+    command: sqlite3 ../../../../docker/nuclio/sqlite/benchmark.db
+
+  mongodb:
+    image: mongo:7.0
+    ports:
+      - "27017:27017"
+    env_file:
+      - ../envs/.mongodb.env
+    volumes:
+      - ../../../../docker/nuclio/mongodb/data:/data/db
