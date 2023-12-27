@@ -37,7 +37,7 @@ require (
 	github.com/nuclio/nuclio-sdk-go v0.4.0
 	github.com/nuclio/zap v0.1.2
 	github.com/prometheus/client_golang v1.14.0
-	github.com/rabbitmq/amqp091-go v1.5.0
+	github.com/rabbitmq/amqp091-go v1.9.0
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rs/xid v1.4.0
