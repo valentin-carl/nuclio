@@ -6,40 +6,40 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/nuclio/errors"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-// The grainworker is a separate program from Nuclio
-// With each function (in the paper: "grain"), a grain worker is deployed.
-// The grain worker subscribes to the respective queue and invokes the function.
-// TODO open question: should the grain worker be deployed in a different container than the function but the same pod or in the same container?
-// => currently leaning towards giving it a different container and to call the function from outside that container,
-// but it could also be called from inside
-// => look at what these containers are => if its alpine e.g., adding the grain worker is simple enough
-// if its something else, this might be more difficult -- also, having the grain worker outside makes it available
-// regardless of which runtime we're using
-// maybe we still need one because of the deployment stuff?
-// TODO how to deploy the grain worker automatically with the function?
-// => do it manually for now
-// Note: so far, this only supports async calls; in the paper it appears to
-// only work that way, but maybe we could use rabbitmq's request-response pattern
+// The grainworker is a separate program from Nuclio. With each function (in the paper: "grain"), a grain
+// worker is deployed. The grain worker subscribes to the respective queue and invokes the function.
+//
+// - For later: look into how hard it would be to also run the grain worker in the function's container
+//   => look at what these containers are => if it's alpine e.g., adding the grain worker is simple enough,
+//      if its something else, this might be more difficult
+//   => also, having the grain worker outside makes it available regardless of which runtime we're using
+//
+// TODO how to deploy the grain worker automatically with the function? => do it manually for now
+//
+// Note: so far, this only supports async calls; in the paper it appears to only work that way,
+// but maybe we could use rabbitmq's request-response pattern
+//
 // TODO add lots of logging => to file!
+//
 // TODO should this be included in "make build"? maybe create "make grainworker"?
 
 type Grainworker struct {
 	functionName string // get this as CLI argument
-	functionIp   string // tells us where to reach the function TODO correct format? TODO what if both are in the same container?
+	functionIp   string // tells us where to reach the function
 	amqpUrl      string // also get this as CLI argument, tells us where to reach the queue
 	conn         *amqp.Connection
 	ch           *amqp.Channel
-	queue        amqp.Queue   // TODO should this be a pointer? => the rabbitmq amqp implementation doesn't treat it that way
+	queue        amqp.Queue
 	client       *http.Client // used to invoke the functions directly
 }
 
-// TODO add different queue options here later on
-// maybe in a config file?
+// TODO add different queue options here later on => maybe in a config file?
 func NewGrainworker(functionName, functionIp, amqpUrl string) *Grainworker {
 
 	// create connection to broker
@@ -52,8 +52,8 @@ func NewGrainworker(functionName, functionIp, amqpUrl string) *Grainworker {
 
 	// create the queue if it doesn't exist yet
 	// TODO turn some of the options to true later on
-	// For now, they don't seem very relevant for the evaluation
-	// But stuff like exclusive (at least for the consumer) etc. could be a good idea in general
+	//  For now, they don't seem very relevant for the evaluation
+	//  But stuff like exclusive (at least for the consumer) etc. could be a good idea in general
 	queue, err := ch.QueueDeclare(
 		functionName,
 		false,
@@ -66,6 +66,7 @@ func NewGrainworker(functionName, functionIp, amqpUrl string) *Grainworker {
 	// assign variables
 	return &Grainworker{
 		functionName: functionName,
+		functionIp:   functionIp,
 		amqpUrl:      amqpUrl,
 		conn:         conn,
 		ch:           ch,
@@ -76,7 +77,7 @@ func NewGrainworker(functionName, functionIp, amqpUrl string) *Grainworker {
 
 func (gw *Grainworker) start() {
 
-	// TODO maybe change this to a different goroutine that listens to Ctrl + C
+	// TODO maybe change this to a different goroutine that listens for an interrupt
 	// see for example https://stackoverflow.com/questions/18106749/golang-catch-signals
 	defer gw.shutdown()
 
@@ -85,7 +86,7 @@ func (gw *Grainworker) start() {
 		gw.functionName,
 		fmt.Sprintf("grain-worker-%s", gw.functionName),
 		false,
-		false, // TODO this might actually be a good idea
+		false, // exclusive=true could be a good idea
 		false,
 		false,
 		nil,
@@ -113,12 +114,12 @@ func (gw *Grainworker) start() {
 // Invoke calls the function this grainworker handles
 func (gw *Grainworker) invoke(event *amqp.Delivery) error {
 
-	// TODO create different go program to test invoking functions with args programmatically
-
 	// create the request
-	requestBody := bytes.NewReader(event.Body) // TODO can we just pass the body on?? experiment with this to figure it out
+	requestBody := bytes.NewReader(event.Body)
 	req, err := http.NewRequest(
-		http.MethodPost, // TODO does this have to be/should it be a post request?
+		// TODO does this have to be/should it be a post request?
+		//  => maybe add some logic with the rabbitmq headers here later on
+		http.MethodPost,
 		gw.functionIp,
 		requestBody,
 	)
@@ -126,15 +127,9 @@ func (gw *Grainworker) invoke(event *amqp.Delivery) error {
 		return err
 	}
 
-	// set the relevant nuclio headers
-	headers := map[string]string{
-		// TODO are these event necessary when calling the function directly?
-		"x-nuclio-function-namespace": "default", // TODO is it "default" or "nuclio"?
-		"x-nuclio-function-name":      gw.functionName,
-		// TODO what else???
-	}
-	for key, value := range headers {
-		req.Header.Set(key, value)
+	// also send headers from rabbitmq event
+	for key, value := range event.Headers {
+		req.Header.Set(key, value.(string))
 	}
 
 	// send it!
@@ -144,18 +139,20 @@ func (gw *Grainworker) invoke(event *amqp.Delivery) error {
 	}
 
 	// TODO what to do with the response?
-	// in workflows, we don't really expect a direct response from the function
-	// => for now, just log it and check if it's a 200
+	//  in workflows, we don't really expect a direct response from the function
+	//  => for now, just log it and check if it's a 200
 
 	// read + log the response
 	responseBody, err := io.ReadAll(response.Body)
 	if err != nil {
 		return err
 	}
-	log.Printf("Response status: \"%s\"\nResponse body: \"%s\"", response.Status, string(responseBody))
+	log.Println(response.Status, string(responseBody))
 	if response.StatusCode != http.StatusOK {
 		return errors.New("didn't get 200 back, what happened? " + response.Status)
 	}
+
+	// returns nil if invocation was successful
 	return nil
 }
 
@@ -163,7 +160,7 @@ func (gw *Grainworker) invoke(event *amqp.Delivery) error {
 func (gw *Grainworker) shutdown() {
 
 	// TODO do the go stuff where you listed to ctrl c to cancel and then close conn, channel and queue etc
-	// => do that to determine when to call this function
+	//  => do that to determine when to call this function
 
 	// close the channel
 	err := gw.ch.Close()
@@ -172,8 +169,6 @@ func (gw *Grainworker) shutdown() {
 	// close the connection
 	err = gw.conn.Close()
 	handle(err)
-
-	// TODO what else?
 }
 
 // //////////////// //
@@ -181,6 +176,8 @@ func (gw *Grainworker) shutdown() {
 // //////////////// //
 
 // TODO handle errors better
+//
+//	for now: panic to find errors
 func handle(err error) {
 	if err != nil {
 		log.Panic(err.Error())
@@ -191,7 +188,20 @@ func handle(err error) {
 // program entry point //
 // /////////////////// //
 
-// blub
 func main() {
-	// TODO	get cli args, create and start the grain worker
+
+	// get cli arguments
+	// example program start: ./grainworker echo http://host.docker.internal:56181 amqp://jeff:jeff@host.docker.internal:5672
+	args := os.Args[1:]
+	var (
+		functionName = args[0]
+		functionIp   = args[1]
+		amqpUrl      = args[2]
+	)
+
+	// create grain worker
+	// TODO
+
+	// start it
+	// TODO
 }
