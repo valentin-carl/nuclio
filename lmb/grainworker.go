@@ -25,8 +25,6 @@ import (
 // Note: so far, this only supports async calls; in the paper it appears to only work that way,
 // but maybe we could use rabbitmq's request-response pattern
 //
-// TODO add lots of logging => to file!
-//
 // TODO should this be included in "make build"? maybe create "make grainworker"?
 
 type Grainworker struct {
@@ -78,8 +76,10 @@ func NewGrainworker(functionName, functionIp, amqpUrl string) *Grainworker {
 func (gw *Grainworker) start() {
 
 	// TODO maybe change this to a different goroutine that listens for an interrupt
-	// see for example https://stackoverflow.com/questions/18106749/golang-catch-signals
+	//  see for example https://stackoverflow.com/questions/18106749/golang-catch-signals
 	defer gw.shutdown()
+
+	log.Println("grain worker started")
 
 	// register at queue as consumer
 	events, err := gw.ch.Consume(
@@ -93,8 +93,12 @@ func (gw *Grainworker) start() {
 	)
 	handle(err)
 
+	log.Println("grain worker registered as consumer at broker")
+
 	// event loop: listen for requests and invoke the function
 	for event := range events {
+
+		log.Println("received event, invoking function ...")
 
 		// invoke the function
 		go func() {
@@ -104,6 +108,9 @@ func (gw *Grainworker) start() {
 
 		// send acknowledgement to broker
 		err := event.Ack(false)
+
+		log.Println("sent acknowledgement to broker")
+
 		handle(err)
 	}
 
@@ -113,6 +120,8 @@ func (gw *Grainworker) start() {
 
 // Invoke calls the function this grainworker handles
 func (gw *Grainworker) invoke(event *amqp.Delivery) error {
+
+	log.Println("invoking function")
 
 	// create the request
 	requestBody := bytes.NewReader(event.Body)
@@ -127,16 +136,24 @@ func (gw *Grainworker) invoke(event *amqp.Delivery) error {
 		return err
 	}
 
+	log.Println("read request body", string(event.Body))
+
 	// also send headers from rabbitmq event
+	err = event.Headers.Validate()
+	handle(err)
 	for key, value := range event.Headers {
 		req.Header.Set(key, value.(string))
 	}
+
+	log.Println("copied headers", event.Headers)
 
 	// send it!
 	response, err := gw.client.Do(req)
 	if err != nil {
 		return err
 	}
+
+	log.Println("sent request to function container")
 
 	// TODO what to do with the response?
 	//  in workflows, we don't really expect a direct response from the function
@@ -147,7 +164,10 @@ func (gw *Grainworker) invoke(event *amqp.Delivery) error {
 	if err != nil {
 		return err
 	}
+
+	log.Println("received response")
 	log.Println(response.Status, string(responseBody))
+
 	if response.StatusCode != http.StatusOK {
 		return errors.New("didn't get 200 back, what happened? " + response.Status)
 	}
@@ -158,6 +178,8 @@ func (gw *Grainworker) invoke(event *amqp.Delivery) error {
 
 // Shutdown closes the amqp connection + channel
 func (gw *Grainworker) shutdown() {
+
+	log.Println("shutting down ...")
 
 	// TODO do the go stuff where you listed to ctrl c to cancel and then close conn, channel and queue etc
 	//  => do that to determine when to call this function
@@ -175,9 +197,16 @@ func (gw *Grainworker) shutdown() {
 // helper functions //
 // //////////////// //
 
-// TODO handle errors better
-//
-//	for now: panic to find errors
+// String show gw config as json
+func (gw *Grainworker) String() string {
+	return fmt.Sprintf(`{
+	"functionName": "%s",
+	"functionIp": "%s",
+	"amqpUrl": "%s"
+}`, gw.functionName, gw.functionIp, gw.amqpUrl)
+}
+
+// TODO handle errors better | for now: panic to find errors
 func handle(err error) {
 	if err != nil {
 		log.Panic(err.Error())
@@ -198,10 +227,17 @@ func main() {
 		functionIp   = args[1]
 		amqpUrl      = args[2]
 	)
+	log.Printf("Program inputs: \n- functionName: %s\n- functionIp: %s\n- amqpUrl: %s\n", functionName, functionIp, amqpUrl)
 
 	// create grain worker
-	// TODO
+	gw := NewGrainworker(functionName, functionIp, amqpUrl)
+	log.Println("created new grain worker:", gw.String())
 
 	// start it
-	// TODO
+	go gw.start()
+	log.Println("started grain worker")
+
+	// don't let the main goroutine end immediately
+	wait := make(<-chan any)
+	<-wait
 }
