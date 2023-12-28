@@ -1,4 +1,4 @@
-package lmb
+package main
 
 import (
 	"bytes"
