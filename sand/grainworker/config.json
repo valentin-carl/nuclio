@@ -1,0 +1,5 @@
+{
+    "functionName": "echo",
+    "functionUrl": "http://host.docker.internal:56181",
+    "brokerUrl": "amqp://jeff:jeff@host.docker.internal:5672"
+}

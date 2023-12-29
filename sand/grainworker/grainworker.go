@@ -2,13 +2,14 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
 
-	"github.com/nuclio/errors"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
@@ -217,20 +218,34 @@ func handle(err error) {
 // program entry point //
 // /////////////////// //
 
+type gwConfig struct {
+	FunctionName string `json:"functionName"`
+	FunctionUrl  string `json:"functionUrl"`
+	BrokerUrl    string `json:"brokerUrl"`
+}
+
 func main() {
 
+	// read config file
+	var config gwConfig
+	file, err := os.Open("config.json")
+	handle(err)
+	err = json.NewDecoder(file).Decode(&config)
+	handle(err)
+
 	// get cli arguments
-	// example program start: ./grainworker echo http://host.docker.internal:56181 amqp://jeff:jeff@host.docker.internal:5672
-	args := os.Args[1:]
-	var (
-		functionName = args[0]
-		functionIp   = args[1]
-		amqpUrl      = args[2]
-	)
-	log.Printf("Program inputs: \n- functionName: %s\n- functionIp: %s\n- amqpUrl: %s\n", functionName, functionIp, amqpUrl)
+	// example program start: ./lmb echo http://host.docker.internal:56181 amqp://jeff:jeff@localhost:5672
+	/*	args := os.Args[1:]
+		var (
+			functionName = args[0]
+			functionIp   = args[1]
+			amqpUrl      = args[2]
+		)
+		log.Printf("Program inputs: \n- functionName: %s\n- functionIp: %s\n- amqpUrl: %s\n", functionName, functionIp, amqpUrl)*/
 
 	// create grain worker
-	gw := NewGrainworker(functionName, functionIp, amqpUrl)
+	/*	gw := NewGrainworker(functionName, functionIp, amqpUrl) */
+	gw := NewGrainworker(config.FunctionName, config.FunctionUrl, config.BrokerUrl)
 	log.Println("created new grain worker:", gw.String())
 
 	// start it

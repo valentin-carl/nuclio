@@ -6,18 +6,6 @@ WORKDIR /app
 RUN apt-get update && \
     apt-get install -y wget htop rabbitmq-server systemctl
 
-# Download and install Go
-# TODO this might not be necessary anymore
-RUN wget https://go.dev/dl/go1.21.5.linux-arm64.tar.gz && \
-    tar -C /usr/local -xzf go1.21.5.linux-arm64.tar.gz && \
-    rm go1.21.5.linux-arm64.tar.gz
-
-# Add Go binaries to the system PATH
-ENV PATH=$PATH:/usr/local/go/bin
-
-# Verify Go installation
-RUN go version
-
 # Copy the startup script to set up the broker into the container
 # ... and make it executable
 COPY setup.sh /app
