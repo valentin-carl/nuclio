@@ -129,9 +129,6 @@ In einer anderen Shell kann dann das Dashboard gestartet werden.
 minikube dashboard
 ```
 
-haha I put text inside this document 
-oh hi mark
-
 ### Sources/Further Reading
 
 - [A definitive guide to Kubernetes image pull policy](https://www.airplane.dev/blog/kubernetes-image-pull-policy)
