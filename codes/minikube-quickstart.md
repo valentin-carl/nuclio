@@ -69,7 +69,7 @@ If you want to avoid frustration, make sure that you have a stable internet conn
 If you're connection is interrupted while building Nuclio, you get to start (almost) at the beginning.
 
 I assume that this step is faster using Linux, as Docker does not run natively on MacOS, but it will probably still take a couple of minutes.
-Also, the nexts builds will be faster (and you don't have to rebuild everything every time).
+Also, the next builds will be faster (and you don't have to rebuild everything every time).
 
 ```shell
 make build
