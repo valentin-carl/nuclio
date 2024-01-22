@@ -20,3 +20,17 @@ spec:
   minReplicas: 1
   maxReplicas: 1
   handler: main:Handler
+  scaleToZero:
+    mode: enabled
+    scalerInterval: 1m
+    resourceReadinessTimeout: 30s
+    inactivityWindowPresets:
+      - 1m
+      - 2m
+      - 5m
+      - 10m
+      - 30m
+    scaleResources:
+      - metricName: nuclio_processor_handled_events_per_second
+        windowSize: 1m
+        threshold: 0

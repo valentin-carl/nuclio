@@ -1,0 +1,34 @@
+nuclio:
+  registry:
+    pushPullUrl: localhost:5000
+
+  controller:
+    image:
+      tag: latest-amd64
+
+  dashboard:
+    image:
+      tag: latest-amd64
+    baseImagePullPolicy: Never
+
+    platform:
+      attributes:
+        restartPolicy:
+          name: "always"
+    scaleToZero:
+      mode: enabled
+      scalerInterval: "5m"
+      resourceReadinessTimeout: "30s"
+      scaleResources:
+      - metricName: nuclio_processor_handled_events_per_second
+        windowSize: "5m"
+        threshold: 0
+      inactivityWindowPresets:
+      - '1m'
+      - '2m'
+      - '5m'
+      - '10m'
+      - '30m'
+      mode: enabled
+      resourceReadinessTimeout: 30s
+      scalerInterval: 1m

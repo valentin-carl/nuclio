@@ -290,7 +290,7 @@ dashboard:
   pipCACertSecretName: ""
 
 autoscaler:
-  enabled: false
+  enabled: true
   replicas: 1
   image:
     repository: quay.io/nuclio/autoscaler
@@ -444,7 +444,30 @@ crd:
   # If true, creates cluster wide custom resources definitions for nuclio's resources
   create: true
 
-platform: {}
+platform: 
+  metrics:
+    sinks:
+      myPrometheusPull:
+        kind: prometheusPull
+    system:
+    - myPrometheusPull
+    functions:
+    - myPrometheusPull
+  scaleToZero:
+    mode: enabled
+    scalerInterval: 1m
+    resourceReadinessTimeout: 30s
+    inactivityWindowPresets:
+      - 1m
+      - 2m
+      - 5m
+      - 10m
+      - 30m
+    scaleResources:
+      - metricName: nuclio_processor_handled_events_per_second
+        windowSize: 1m
+        threshold: 0
+
 #  runtime:
 #    python:
 #      pipCAPath: /path/to/pip-ca-file.crt

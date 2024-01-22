@@ -2,14 +2,15 @@ package utils
 
 import (
 	"fmt"
-	"github.com/nuclio/nuclio/pkg/common/headers"
-	"github.com/nuclio/nuclio/pkg/nexus/common/models"
 	"net/http"
 	"net/url"
+
+	"github.com/nuclio/nuclio/pkg/common/headers"
+	"github.com/nuclio/nuclio/pkg/nexus/common/models"
 )
 
 func GetEnvironmentHost() (host string) {
-	return "host.docker.internal"
+	return "localhost"
 }
 
 func TransformRequestToClientRequest(nexusItemRequest *http.Request) (newRequest *http.Request) {

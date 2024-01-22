@@ -40,8 +40,8 @@ limitations under the License.
             namespace: '',
             platformKind: '',
             scaleToZero: {
-                inactivityWindowPresets: null,
-                mode: 'disabled',
+                inactivityWindowPresets: ['1m','2m','5m'],
+                mode: 'enabled',
                 scaleResources: null
             },
             validFunctionPriorityClassNames: null
