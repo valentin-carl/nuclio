@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -38,7 +37,6 @@ type Grainworker struct {
 	client       *http.Client // used to invoke the functions directly
 }
 
-// TODO add different queue options here later on => maybe in a config file?
 func NewGrainworker(functionName, functionIp, amqpUrl string) *Grainworker {
 
 	// create connection to broker
@@ -50,9 +48,6 @@ func NewGrainworker(functionName, functionIp, amqpUrl string) *Grainworker {
 	handle(err)
 
 	// create the queue if it doesn't exist yet
-	// TODO turn some of the options to true later on
-	//  For now, they don't seem very relevant for the evaluation
-	//  But stuff like exclusive (at least for the consumer) etc. could be a good idea in general
 	queue, err := ch.QueueDeclare(
 		functionName,
 		false,
@@ -76,8 +71,6 @@ func NewGrainworker(functionName, functionIp, amqpUrl string) *Grainworker {
 
 func (gw *Grainworker) start() {
 
-	// TODO maybe change this to a different goroutine that listens for an interrupt
-	//  see for example https://stackoverflow.com/questions/18106749/golang-catch-signals
 	defer gw.shutdown()
 
 	log.Println("grain worker started")
@@ -207,7 +200,6 @@ func (gw *Grainworker) String() string {
 }`, gw.functionName, gw.functionIp, gw.amqpUrl)
 }
 
-// TODO handle errors better | for now: panic to find errors
 func handle(err error) {
 	if err != nil {
 		log.Panic(err.Error())
@@ -226,25 +218,24 @@ type gwConfig struct {
 
 func main() {
 
-	// read config file
 	var config gwConfig
-	file, err := os.Open("config.json")
-	handle(err)
-	err = json.NewDecoder(file).Decode(&config)
-	handle(err)
 
-	// get cli arguments
-	// example program start: ./lmb echo http://host.docker.internal:56181 amqp://jeff:jeff@localhost:5672
-	/*	args := os.Args[1:]
-		var (
-			functionName = args[0]
-			functionIp   = args[1]
-			amqpUrl      = args[2]
-		)
-		log.Printf("Program inputs: \n- functionName: %s\n- functionIp: %s\n- amqpUrl: %s\n", functionName, functionIp, amqpUrl)*/
+	fname := os.Getenv("FUNCTION_NAME")
+	if fname == "" {
+		panic("my name is jeff")
+	}
+	fport := os.Getenv("FUNCTION_PORT")
+	if fport == "" {
+		panic("my name is jeff ... NOT")
+	}
+
+	config = gwConfig{
+		fname,
+		fmt.Sprintf("http://localhost:%s", fport),
+		fmt.Sprintf("amqp://jeff:jeff@localhost:5672"),
+	}
 
 	// create grain worker
-	/*	gw := NewGrainworker(functionName, functionIp, amqpUrl) */
 	gw := NewGrainworker(config.FunctionName, config.FunctionUrl, config.BrokerUrl)
 	log.Println("created new grain worker:", gw.String())
 
@@ -253,6 +244,5 @@ func main() {
 	log.Println("started grain worker")
 
 	// don't let the main goroutine end immediately
-	wait := make(<-chan any)
-	<-wait
+	<-make(<-chan any)
 }
