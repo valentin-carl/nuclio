@@ -1,5 +1,5 @@
 {
-    "functionName": "echo",
-    "functionUrl": "http://host.docker.internal:56181",
+    "functionName": "revert",
+    "functionUrl": "http://host.docker.internal:45493",
     "brokerUrl": "amqp://jeff:jeff@host.docker.internal:5672"
 }

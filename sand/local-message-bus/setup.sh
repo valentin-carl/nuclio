@@ -17,5 +17,9 @@ rabbitmqctl add_user "jeff" "jeff"
 rabbitmqctl set_permissions -p "/" "jeff" ".*" ".*" ".*"
 rabbitmqctl set_user_tags "jeff" "administrator"
 
+rabbitmqadmin declare queue name=output durable=false
+rabbitmqadmin declare queue name=revert durable=false
+rabbitmqadmin declare queue name=stretch durable=false
+
 # leave the container running
 tail -f /dev/null
