@@ -66,6 +66,8 @@ and add the correct port.
 Next, tag the images you want to add to the registry.
 (Make sure to replace the port if your registry is listening on a different one.)
 
+TODO ADD COMMANDS FOR GRAIN WORKER
+
 ```shell
 docker image tag local-message-bus:latest $(minikube ip):5000/local-message-bus:latest
 ```
@@ -98,7 +100,7 @@ It is important that we choose the function that starts the workflow because the
 Assuming our function is called “start”, and its deployment is called “nuclio-start”, we can get a copy of the config file we need by running this command.
 
 ```shell
-kubectl edit deployment nuclio-start -o yaml > sandbox.yaml
+kubectl get deployment nuclio-start -o yaml > sandbox.yaml
 ```
 
 Next, remove the fields 
