@@ -2,9 +2,6 @@ package docker
 
 import (
 	"fmt"
-	"strings"
-	"time"
-
 	docker "github.com/fsouza/go-dockerclient"
 	deployer_models "github.com/nuclio/nuclio/pkg/nexus/elastic-deploy/models"
 )
@@ -14,16 +11,14 @@ type DockerDeployer struct {
 	*deployer_models.ProElasticDeployerConfig
 	*docker.Client
 
-	baseContainerName          string
-	durationFunctionsContainer *map[string]time.Time
+	baseContainerName string
 }
 
 // NewDockerDeployer creates a new docker deployer
-func NewDockerDeployer(baseContainerName string, config *deployer_models.ProElasticDeployerConfig, durationFunctionsContainer *map[string]time.Time) *DockerDeployer {
+func NewDockerDeployer(baseContainerName string, config *deployer_models.ProElasticDeployerConfig) *DockerDeployer {
 	return &DockerDeployer{
-		baseContainerName:          baseContainerName,
-		ProElasticDeployerConfig:   config,
-		durationFunctionsContainer: durationFunctionsContainer,
+		baseContainerName:        baseContainerName,
+		ProElasticDeployerConfig: config,
 	}
 }
 
@@ -31,20 +26,10 @@ func NewDockerDeployer(baseContainerName string, config *deployer_models.ProElas
 func (ds *DockerDeployer) Initialize() {
 	ds.Client, _ = docker.NewClientFromEnv()
 
-	container, err := ds.GetNuclioFunctionContainer()
+	_, err := ds.GetNuclioFunctionContainer()
 	if err != nil {
 		panic(err)
 	}
-
-	fmt.Println("The Nucleo function containers are:", container)
-	for _, container := range *container {
-		pauseTime := time.Now().Add(ds.MaxIdleTime)
-		functionName := strings.TrimPrefix(container, "/")
-		functionName = strings.TrimPrefix(functionName, ds.baseContainerName)
-		(*ds.durationFunctionsContainer)[functionName] = pauseTime
-	}
-
-	fmt.Println("The durationFunctionContainer is:", ds.durationFunctionsContainer)
 }
 
 // GetNuclioFunctionContainer returns all nuclio function container
@@ -80,8 +65,6 @@ func (ds *DockerDeployer) Unpause(functionName string) error {
 			return err
 		}
 		fmt.Printf("Container %s unpaused\n", ds.getContainerName(functionName))
-		(*ds.durationFunctionsContainer)[functionName] = time.Now().Add(ds.MaxIdleTime)
-
 		return nil
 	}
 

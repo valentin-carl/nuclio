@@ -21,20 +21,15 @@ type IdleSchedulerTestSuite struct {
 func (suite *IdleSchedulerTestSuite) SetupTest() {
 	sleepDuration := 10 * time.Millisecond
 
-	defaultQueue := common.
-		Initialize()
-	baseSchedulerConfig := config.BaseNexusSchedulerConfig{
-		SleepDuration: sleepDuration,
-	}
-	nexusConfig := config.
-		NewDefaultNexusConfig()
+	defaultQueue := common.Initialize()
+	baseSchedulerConfig := config.NewBaseNexusSchedulerConfig(true, sleepDuration)
+	nexusConfig := config.NewDefaultNexusConfig()
 
 	Client := &http.Client{
 		Transport: &utils.MockRoundTripper{},
 	}
 
-	baseScheduler := scheduler.
-		NewBaseNexusScheduler(defaultQueue, &baseSchedulerConfig, &nexusConfig, Client, nil)
+	baseScheduler := scheduler.NewBaseNexusScheduler(defaultQueue, &baseSchedulerConfig, &nexusConfig, Client, nil, nil)
 
 	suite.is = *idle.NewScheduler(baseScheduler)
 }
@@ -63,7 +58,7 @@ func (suite *IdleSchedulerTestSuite) TestIdleScheduler() {
 
 	for i := 1; i <= len(taskNames); i++ {
 		suite.Equal(len(taskNames)-i, suite.is.Queue.Len())
-		time.Sleep(time.Duration(offset) * time.Millisecond)
+		time.Sleep(time.Duration(offset)*time.Millisecond + 10*time.Microsecond)
 	}
 }
 

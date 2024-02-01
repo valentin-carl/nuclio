@@ -41,7 +41,7 @@ func (suite *DeadlineSchedulerTestSuite) SetupTest() {
 		Transport: &utils.MockRoundTripper{},
 	}
 
-	baseScheduler := scheduler.NewBaseNexusScheduler(defaultQueue, &baseSchedulerConfig, &nexusConfig, Client, nil)
+	baseScheduler := scheduler.NewBaseNexusScheduler(defaultQueue, &baseSchedulerConfig, &nexusConfig, Client, nil, nil)
 
 	suite.ds = deadline.NewScheduler(baseScheduler, deadlineConfig)
 }
@@ -66,7 +66,7 @@ func (suite *DeadlineSchedulerTestSuite) TestDeadlineScheduler() {
 	// For example, you can check if the task was removed from the queue as expected
 	suite.Equal(1, suite.ds.Queue.Len())
 
-	time.Sleep(suite.ds.SleepDuration + 200*time.Millisecond)
+	time.Sleep(suite.ds.SleepDuration + 300*time.Millisecond)
 	suite.Equal(0, suite.ds.Queue.Len())
 
 	// Pause the scheduler

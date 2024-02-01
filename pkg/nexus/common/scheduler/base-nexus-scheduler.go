@@ -29,11 +29,12 @@ type BaseNexusScheduler struct {
 	// The client to send async requests with
 	client *http.Client
 	// The deployer to use for unpausing / resuming functions
-	deployer *elastic_deploy.ProElasticDeploy
+	deployer         *elastic_deploy.ProElasticDeploy
+	executionChannel chan string
 }
 
 // NewBaseNexusScheduler creates a new base scheduler
-func NewBaseNexusScheduler(queue *queue.NexusQueue, config *config.BaseNexusSchedulerConfig, nexusConfig *config.NexusConfig, client *http.Client, deployer *elastic_deploy.ProElasticDeploy) *BaseNexusScheduler {
+func NewBaseNexusScheduler(queue *queue.NexusQueue, config *config.BaseNexusSchedulerConfig, nexusConfig *config.NexusConfig, client *http.Client, deployer *elastic_deploy.ProElasticDeploy, executionChannel chan string) *BaseNexusScheduler {
 	return &BaseNexusScheduler{
 		BaseNexusSchedulerConfig: config,
 		Queue:                    queue,
@@ -41,13 +42,14 @@ func NewBaseNexusScheduler(queue *queue.NexusQueue, config *config.BaseNexusSche
 		client:                   client,
 		NexusConfig:              nexusConfig,
 		deployer:                 deployer,
+		executionChannel:         executionChannel,
 	}
 }
 
 // NewDefaultBaseNexusScheduler creates a new base scheduler with default config
-func NewDefaultBaseNexusScheduler(queue *queue.NexusQueue, nexusConfig *config.NexusConfig, deployer *elastic_deploy.ProElasticDeploy) *BaseNexusScheduler {
+func NewDefaultBaseNexusScheduler(queue *queue.NexusQueue, nexusConfig *config.NexusConfig, deployer *elastic_deploy.ProElasticDeploy, executionChannel chan string) *BaseNexusScheduler {
 	baseSchedulerConfig := config.NewDefaultBaseNexusSchedulerConfig()
-	return NewBaseNexusScheduler(queue, &baseSchedulerConfig, nexusConfig, &http.Client{}, deployer)
+	return NewBaseNexusScheduler(queue, &baseSchedulerConfig, nexusConfig, &http.Client{}, deployer, executionChannel)
 }
 
 // Push adds an element to the queue
@@ -57,14 +59,22 @@ func (bns *BaseNexusScheduler) Push(elem *structs.NexusItem) {
 
 // Pop removes and returns the first element from the queue
 func (bns *BaseNexusScheduler) Pop() (nexusItem *structs.NexusItem) {
-	bns.MaxParallelRequests.Add(-1)
-	defer bns.MaxParallelRequests.Add(1)
+	bns.CurrentParallelRequests.Add(-1)
+	defer bns.CurrentParallelRequests.Add(1)
 
 	nexusItem = bns.Queue.Pop()
 
 	bns.Unpause(nexusItem.Name)
 	bns.CallSynchronized(nexusItem)
 	return
+}
+
+func (bns *BaseNexusScheduler) SendToExecutionChannel(functionName string) {
+	if bns.executionChannel == nil {
+		return
+	}
+	fmt.Println("Sending to execution channel:", functionName)
+	bns.executionChannel <- functionName
 }
 
 // Unpause ensures that the function container is running
