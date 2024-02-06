@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "outDir": "./dist",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": false,
+    "skipLibCheck": true,
+
+    // Added configurations
+    "baseUrl": ".",        // Set the base directory for non-relative modules
+    "rootDir": "./",    // Assuming your source files are in a 'src' directory
+    "paths": {             // Example of using path aliases
+      "*": ["*", "src/*"]
+    }
+  },
+  "include": ["./**/*"],
+}

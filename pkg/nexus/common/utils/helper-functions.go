@@ -16,7 +16,7 @@ import (
 // More info: https://docs.docker.com/docker-for-mac/networking/#use-cases-and-workarounds
 // Docker compose: profaastinate/deployment/docker/docker-compose.yml
 func GetEnvironmentHost() (host string) {
-	return "host.docker.internal"
+	return "localhost"
 }
 
 // TransformRequestToClientRequest transforms the async request send to the nexus from outside the cluster to a request

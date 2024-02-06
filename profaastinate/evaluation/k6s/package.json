@@ -1,0 +1,24 @@
+{
+  "name": "k6s-evaluation",
+  "version": "1.0.0",
+  "description": "This project is a proof of concept for a serverless framework which is able to dynamically scale functions based on their resource usage. Proofaastinate is build on top of [Nuclio](https://nuclio.io) and uses the [Nexus](../pkg/nexus) package to manage the function requests.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "tsc && k6 run ./main-script.ts",
+    "start": "nodemon --watch 'src/**/*.ts' --exec 'tsc && k6 run ./dist/main-script.js'"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "nodemon": "^3.0.3",
+    "ts-node": "^10.9.2",
+    "tsc-watch": "^6.0.4"
+  },
+  "dependencies": {
+    "@types/k6": "^0.49.0"
+  }
+}

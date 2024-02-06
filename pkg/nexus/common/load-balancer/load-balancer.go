@@ -124,7 +124,7 @@ func (lb *LoadBalancer) CalculateDesiredNumberOfRequestsMemory(numberOfExecutedF
 // It tries to align the system load with the target load for the CPU and Memory
 // For more information see profaastinate/docs/diagrams/uml/activity/load-balancer-schedule.puml
 func (lb *LoadBalancer) AutoBalance() {
-	fmt.Printf("AutoBalancing")
+	//fmt.Printf("AutoBalancing")
 
 	executedFunctionMap := make(map[string]int)
 	numberOfExecutedFunctionCalls := 0
@@ -140,7 +140,7 @@ func (lb *LoadBalancer) AutoBalance() {
 			numberOfExecutedFunctionCalls++
 
 		default:
-			fmt.Printf("No item in channel")
+			//fmt.Printf("No item in channel")
 			fmt.Print(executedFunctionMap)
 
 			// Used when the channel is empty
@@ -169,7 +169,7 @@ func (lb *LoadBalancer) AutoBalance() {
 
 			lb.maxParallelRequests.Store(int32(avgDesiredNumber))
 			lb.functionExecutionChannel = make(chan string, avgDesiredNumber*10)
-			fmt.Printf("The maxProcessingRequests was set to %d\n", avgDesiredNumber)
+			//fmt.Printf("The maxProcessingRequests was set to %d\n", avgDesiredNumber)
 			return
 		}
 	}

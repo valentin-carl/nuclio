@@ -94,7 +94,7 @@ controller:
 # Dashboard settings
 dashboard:
   enabled: true
-  replicas: 1
+  replicas: 5
   image:
     repository: quay.io/nuclio/dashboard
     tag: 1.11.25-amd64
@@ -290,7 +290,7 @@ dashboard:
   pipCACertSecretName: ""
 
 autoscaler:
-  enabled: false
+  enabled: true
   replicas: 1
   image:
     repository: quay.io/nuclio/autoscaler
@@ -324,7 +324,7 @@ autoscaler:
   priorityClassName: ""
 
 dlx:
-  enabled: false
+  enabled: true
   replicas: 1
   image:
     repository: quay.io/nuclio/dlx

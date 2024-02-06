@@ -1,7 +1,6 @@
 package deadline
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/nuclio/nuclio/pkg/nexus/common/models/interfaces"
@@ -79,7 +78,7 @@ func (ds *DeadlineScheduler) executeSchedule() {
 			}(task)
 		}
 
-		fmt.Println("Sleeping:", time.Until(nextWakeUpTime).Seconds(), "seconds")
+		//fmt.Println("Sleeping:", time.Until(nextWakeUpTime).Seconds(), "seconds")
 		time.Sleep(time.Until(nextWakeUpTime))
 	}
 }
