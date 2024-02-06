@@ -1,0 +1,36 @@
+rules:
+ custom:
+  - metricsQuery: sum(rate(<<.Series>>{<<.LabelMatchers>>}[10m])) by (<<.GroupBy>>)
+    resources:
+      overrides:
+        kubernetes_pod_name:
+          resource: pod
+        function:
+          resource: nucliofunction
+        namespace:
+          resource: namespace
+    name:
+      matches: "^(.*)_total"
+      as: "${1}_per_10m"
+    seriesQuery: nuclio_processor_handled_events_total{namespace!="",exported_instance!="",function!="",trigger_kind="http"}
+  # Add more rules for other custom metrics if needed
+
+prometheus:
+  url: http://prometheus-server.monitoring.svc
+  port: 80
+  path: ""
+
+
+
+# rules:
+#   custom:
+#     - metricsQuery: sum(rate(<<.Series>>{<<.LabelMatchers>>}[10m])) by (<<.GroupBy>>)
+#       resources:
+#         overrides:
+#           kubernetes_pod_name: pod
+#           function: nucliofunction
+#           namespace: default
+#       name:
+#         matches: "^(.*)_total"
+#         as: "${1}_per_10m"
+#       seriesQuery: nuclio_processor_handled_events_total{namespace!="",exported_instance!="",function!="",trigger_kind="http"}

@@ -324,7 +324,7 @@ autoscaler:
   priorityClassName: ""
 
 dlx:
-  enabled: false
+  enabled: true
   replicas: 1
   image:
     repository: quay.io/nuclio/dlx
@@ -447,26 +447,47 @@ crd:
 platform: 
   metrics:
     sinks:
-      myPrometheusPull:
+      myPromPush:
+        kind: prometheusPush
+        url: http://prometheus-prometheus-pushgateway:9091
+        attributes:
+          jobName: myPushJob
+          instanceName: myPushInstance
+          interval: 10s
+      myPromPull:
         kind: prometheusPull
+        url: :8090
+        attributes:
+          jobName: myPullJob
+          instanceName: myPullInstance
+      myAppInsights:
+        kind: appisights
+        attributes:
+          interval: 10s
+          instrumentationKey: something
+          maxBatchSize: 2048
+          maxBatchInterval: 60s
     system:
-    - myPrometheusPull
+    - myPromPull
+    - myAppInsights
     functions:
-    - myPrometheusPull
+    - myPromPush
+
   scaleToZero:
-    mode: enabled
-    scalerInterval: 1m
-    resourceReadinessTimeout: 30s
+    httpTriggerIngressAnnotations: null
     inactivityWindowPresets:
-      - 1m
-      - 2m
-      - 5m
-      - 10m
-      - 30m
+    - 1m
+    - 2m
+    - 5m
+    - 10m
+    - 30m
+    mode: enabled
+    resourceReadinessTimeout: 5m
     scaleResources:
-      - metricName: nuclio_processor_handled_events_per_second
-        windowSize: 1m
-        threshold: 0
+    - metricName: nuclio_processor_handled_events_total
+      threshold: 0
+      windowSize: 10m
+    scalerInterval: 1m 
 
 #  runtime:
 #    python:
