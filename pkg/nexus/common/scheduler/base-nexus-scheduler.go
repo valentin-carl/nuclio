@@ -1,11 +1,10 @@
 package scheduler
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/nuclio/nuclio/pkg/nexus/common/models"
 	"github.com/nuclio/nuclio/pkg/nexus/common/models/config"
@@ -73,7 +72,7 @@ func (bns *BaseNexusScheduler) SendToExecutionChannel(functionName string) {
 	if bns.executionChannel == nil {
 		return
 	}
-	fmt.Println("Sending to execution channel:", functionName)
+	// fmt.Println("Sending to execution channel:", functionName)
 	bns.executionChannel <- functionName
 }
 
@@ -93,6 +92,7 @@ func (bns *BaseNexusScheduler) Unpause(functionName string) {
 func (bns *BaseNexusScheduler) CallSynchronized(nexusItem *structs.NexusItem) {
 	newRequest := utils.TransformRequestToClientRequest(nexusItem.Request)
 
+	bns.evaluateInvocation(nexusItem)
 	_, err := bns.client.Do(newRequest)
 	if err != nil {
 		fmt.Println("Error sending request to Nuclio:", err)
@@ -101,19 +101,28 @@ func (bns *BaseNexusScheduler) CallSynchronized(nexusItem *structs.NexusItem) {
 
 // Deprecated: evaluateInvocation evaluates the invocation of a function - It just used for testing
 func (bns *BaseNexusScheduler) evaluateInvocation(nexusItem *structs.NexusItem) {
-	jsonData, err := json.Marshal(nexusItem.Name)
-	if err != nil {
-		fmt.Println("Error marshaling JSON:", err)
-		return
-	}
 
 	var evaluationUrl url.URL
 	evaluationUrl.Scheme = models.HTTP_SCHEME
 	evaluationUrl.Path = models.EVALUATION_PATH
-	evaluationUrl.Host = fmt.Sprintf("%s:%s", utils.GetEnvironmentHost(), models.PORT)
+	evaluationUrl.Host = fmt.Sprintf("%s:%s", models.EVALUATION_HOST, models.EVALUATION_PORT)
 
-	_, postErr := bns.client.Post(evaluationUrl.String(), "application/json", bytes.NewBuffer(jsonData))
-	if postErr != nil {
+	req, err := http.NewRequest(http.MethodPost, "", nil)
+	if err != nil {
+		fmt.Println("Error creating request:", err)
 		return
 	}
+	req.Header = nexusItem.Request.Header
+	req.URL = &evaluationUrl
+	req.Header.Set("x-nuclio-function-name", nexusItem.Name)
+	req.Header.Set("x-profaastinate-process-deadline", nexusItem.Deadline.Format(time.RFC3339))
+
+	// Make the request
+	resp, postErr := bns.client.Do(req)
+	fmt.Println("Sending request to evaluation endpoint:", evaluationUrl.String())
+	if postErr != nil {
+		fmt.Println("Error making request:", postErr)
+		return
+	}
+	defer resp.Body.Close()
 }

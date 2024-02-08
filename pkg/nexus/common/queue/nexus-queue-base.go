@@ -33,6 +33,9 @@ func (nxs *nexusHeap) Push(x any) {
 func (nxs *nexusHeap) Pop() any {
 	old := *nxs
 	n := len(old)
+	if n == 0 {
+		return nil // or handle the empty case as appropriate
+	}
 	NexusEntry := old[n-1]
 	old[n-1] = nil        // avoid memory leak
 	NexusEntry.Index = -1 // for safety
@@ -67,7 +70,9 @@ func Initialize() *NexusQueue {
 // RemoveAll removes all items from the queue without returning them and ignoring the lock
 func (p *NexusQueue) removeAllNotBlocking(nexusItems []*structs.NexusItem) {
 	for _, item := range nexusItems {
-		heap.Remove(p.impl, item.Index)
+		if item.Index != -1 {
+			heap.Remove(p.impl, item.Index)
+		}
 	}
 }
 

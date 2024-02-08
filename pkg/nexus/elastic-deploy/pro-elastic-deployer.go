@@ -32,7 +32,7 @@ func NewProElasticDeploy(envRegistry *env.EnvRegistry, config deployer_models.Pr
 
 // NewProElasticDeployDefault creates a new pro elastic deployer with default config
 func NewProElasticDeployDefault(envRegistry *env.EnvRegistry) *ProElasticDeploy {
-	deployConfig := deployer_models.NewProElasticDeployerConfig(5*time.Second, 5*time.Second)
+	deployConfig := deployer_models.NewProElasticDeployerConfig(1*time.Minute, 1*time.Minute)
 	return NewProElasticDeploy(envRegistry, deployConfig)
 }
 

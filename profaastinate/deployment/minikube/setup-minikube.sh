@@ -22,7 +22,7 @@ helm install nuclio \
 	--set controller.image.tag=latest-arm64 \
 	--set dashboard.image.tag=latest-arm64 \
 	--set dashboard.baseImagePullPolicy=Never \
-	./hack/k8s/helm/nuclio/
+	../../../hack/k8s/helm/nuclio/
 
 # Forward the Nuclio dashboard port
 kubectl -n default port-forward $(kubectl get pods -n default -l nuclio.io/app=dashboard -o jsonpath='{.items[0].metadata.name}') 8070:8070

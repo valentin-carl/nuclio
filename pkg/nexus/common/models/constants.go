@@ -7,6 +7,7 @@ const (
 	NUCLIO_PATH              = "/api/function_invocations"
 	PORT                     = "8070"
 
-	EVALUATION_PATH = "/evaluation/invocation"
+	EVALUATION_PATH = "/evaluation/headers"
 	EVALUATION_PORT = "8888"
+	EVALUATION_HOST = "host.docker.internal"
 )

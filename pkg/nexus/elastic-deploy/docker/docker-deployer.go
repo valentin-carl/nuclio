@@ -54,11 +54,10 @@ func (ds *DockerDeployer) GetNuclioFunctionContainer() (*[]string, error) {
 func (ds *DockerDeployer) Unpause(functionName string) error {
 	container := ds.getFunctionContainer(functionName)
 	if ds.IsRunning(functionName) {
-		fmt.Printf("Container %s has been running already\n", ds.getContainerName(functionName))
+		// fmt.Printf("Container %s has been running already\n", ds.getContainerName(functionName))
 		return nil
 	}
 
-	fmt.Println("Container state: ", container.State)
 	if container.State == deployer_models.Paused {
 		err := ds.UnpauseContainer(container.ID)
 		if err != nil {
@@ -76,7 +75,7 @@ func (ds *DockerDeployer) Unpause(functionName string) error {
 func (ds *DockerDeployer) Pause(functionName string) error {
 	container := ds.getFunctionContainer(functionName)
 	if container.State == deployer_models.Paused {
-		fmt.Printf("Container %s has been paused already\n", ds.getContainerName(functionName))
+		// fmt.Printf("Container %s has been paused already\n", ds.getContainerName(functionName))
 		return nil
 	}
 

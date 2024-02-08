@@ -59,7 +59,7 @@ func Initialize() (nexus *Nexus) {
 	nexus.deployer = elastic_deploy.NewProElasticDeployDefault(nexus.envRegistry)
 	nexus.deployer.Initialize()
 
-	nexus.loadBalancer = load_balancer.NewLoadBalancer(&maxParallelRequests, channel, 1*time.Second, 40.0, 40.0)
+	nexus.loadBalancer = load_balancer.NewLoadBalancer(&maxParallelRequests, channel, 30*time.Second, 90.0, 90.0)
 	nexus.loadBalancer.Initialize()
 
 	defaultBaseScheduler := scheduler.NewDefaultBaseNexusScheduler(&nexusQueue, &nexusConfig, nexus.deployer, channel)

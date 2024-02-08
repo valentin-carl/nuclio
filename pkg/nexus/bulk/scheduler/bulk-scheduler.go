@@ -80,9 +80,9 @@ func (ds *BulkScheduler) callAndRemoveItems(items []*structs.NexusItem) {
 	copiedItems := make([]*structs.NexusItem, len(items))
 	copy(copiedItems, items)
 	ds.Unpause(copiedItems[0].Name)
+	ds.CurrentParallelRequests.Add(int32(len(copiedItems)))
 
-	for _, item := range copiedItems {
-		ds.CurrentParallelRequests.Add(1)
+	for _, item := range items {
 
 		go func(item *structs.NexusItem) {
 			defer ds.CurrentParallelRequests.Add(-1)

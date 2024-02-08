@@ -2,13 +2,22 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 	"sync"
+	"time"
 )
 
 const (
-	EVALUATION_INVOCATION = "/evaluation/invocation"
-	EVALUATION_HEADERS    = "/evaluation/headers"
+	EVALUATION_INVOCATION  = "/evaluation/invocation"
+	EVALUATION_HEADERS     = "/evaluation/headers"
+	ASYNC_DEADLINE         = "x-profaastinate-process-deadline"
+	FUNCTION_NAME          = "x-nuclio-function-name"
+	RELATIVE_PATH_LOG_PATH = "profaastinate/evaluation/counter-backend/logs"
+	ASYNC_EVALUATION_NAME  = "async.log"
+	NORMAL_EVALUATION_NAME = "normal.log"
 )
 
 // Counter struct holds the count and a mutex to ensure safe access
@@ -16,6 +25,30 @@ type Counter struct {
 	count   int
 	headers []http.Header
 	mu      sync.RWMutex
+}
+
+var (
+	logger  *log.Logger
+	logFile map[string]*os.File
+)
+
+func initLogger(filename string) {
+	logFilePath := RELATIVE_PATH_LOG_PATH + "-" + filename
+	_, err := os.Stat(logFilePath)
+	if os.IsNotExist(err) {
+		errDir := os.MkdirAll(filepath.Dir(logFilePath), 0755)
+		if errDir != nil {
+			log.Fatalf("Failed to create directory for log file: %v", errDir)
+		}
+	}
+
+	file, err := os.OpenFile(logFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Fatalf("Failed to open log file: %v", err)
+	}
+
+	logFile[filename] = file
+	logger = log.New(file, "", log.LstdFlags)
 }
 
 func (c *Counter) handleFunctionInvocations(w http.ResponseWriter, r *http.Request) {
@@ -49,20 +82,37 @@ func (c *Counter) handleFunctionInvocations(w http.ResponseWriter, r *http.Reque
 	}
 }
 
-func (c *Counter) handleFunctionHeaders(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodGet:
-		c.mu.RLock()
-		defer c.mu.RUnlock()
-
-		fmt.Fprintf(w, "Headers: %+v", c.headers)
-	default:
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+func logToFile(deadline string, functionName string) {
+	if deadline == "" {
+		log.SetOutput(logFile[NORMAL_EVALUATION_NAME])
+		log.Printf("%s", functionName)
+	} else {
+		log.SetOutput(logFile[ASYNC_EVALUATION_NAME])
+		log.Printf("%s - %s", deadline, functionName)
 	}
 }
 
+func (c *Counter) handleFunctionHeaders(w http.ResponseWriter, r *http.Request) {
+	functionName := r.Header.Get(FUNCTION_NAME)
+	deadline := r.Header.Get(ASYNC_DEADLINE)
+	logToFile(deadline, functionName)
+}
+
 func main() {
+	logFile = make(map[string]*os.File)
+	logsList := []string{ASYNC_EVALUATION_NAME, NORMAL_EVALUATION_NAME}
+	for _, logName := range logsList {
+		initLogger(logName)
+		defer logFile[logName].Close()
+	}
 	counter := &Counter{count: 0, headers: make([]http.Header, 0)}
+
+	server := &http.Server{
+		Addr:         ":8888",
+		Handler:      nil,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 10 * time.Second,
+	}
 
 	// Set up HTTP server with two endpoints
 	http.HandleFunc(EVALUATION_INVOCATION, counter.handleFunctionInvocations)
@@ -70,5 +120,7 @@ func main() {
 
 	// Start the server
 	fmt.Println("Server listening on :8888")
-	http.ListenAndServe(":8888", nil)
+	if err := server.ListenAndServe(); err != nil {
+		log.Fatalf("Failed to start server: %v", err)
+	}
 }
