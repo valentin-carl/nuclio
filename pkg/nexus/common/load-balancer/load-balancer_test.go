@@ -33,7 +33,7 @@ func (suite *LoadBalancerTestSuite) SetupTest() {
 
 	var maxParallelRequests atomic.Int32
 	maxParallelRequests.Store(200)
-	executionChannel := make(chan string, maxParallelRequests.Load()*10)
+	executionChannel := make(chan string, 10000)
 
 	suite.loadBalancer = NewLoadBalancer(
 		&maxParallelRequests,

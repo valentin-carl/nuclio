@@ -22,17 +22,25 @@ func GetEnvironmentHost() (host string) {
 // TransformRequestToClientRequest transforms the async request send to the nexus from outside the cluster to a request
 // that can be sent to the function inside the cluster
 func TransformRequestToClientRequest(nexusItemRequest *http.Request) (newRequest *http.Request) {
-	if nexusItemRequest.Header.Get(headers.ProcessDeadline) != "" {
-		nexusItemRequest.Header.Del(headers.ProcessDeadline)
-	}
-
 	var requestUrl url.URL
 	requestUrl.Scheme = "http"
 	requestUrl.Path = nexusItemRequest.URL.Path
-	// Needs to be set to the port of the env the default port is 8080
 	requestUrl.Host = fmt.Sprintf("%s:%s", GetEnvironmentHost(), models.PORT)
 
 	newRequest, _ = http.NewRequest(nexusItemRequest.Method, requestUrl.String(), nexusItemRequest.Body)
-	newRequest.Header = nexusItemRequest.Header
+
+	// Create a new header map and copy the contents
+	newRequest.Header = make(http.Header)
+	for name, values := range nexusItemRequest.Header {
+		for _, value := range values {
+			if name == headers.ProcessDeadline {
+				continue
+			}
+
+			newRequest.Header.Add(name, value)
+		}
+	}
+
+	// fmt.Println("new Request: ", newRequest)
 	return
 }

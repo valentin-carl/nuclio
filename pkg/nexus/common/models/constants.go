@@ -10,4 +10,6 @@ const (
 	EVALUATION_PATH = "/evaluation/headers"
 	EVALUATION_PORT = "8888"
 	EVALUATION_HOST = "host.docker.internal"
+
+	CHANNEL_SIZE = 10000
 )

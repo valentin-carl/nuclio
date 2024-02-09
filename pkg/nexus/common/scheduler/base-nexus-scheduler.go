@@ -61,6 +61,7 @@ func (bns *BaseNexusScheduler) Pop() (nexusItem *structs.NexusItem) {
 	bns.CurrentParallelRequests.Add(-1)
 	defer bns.CurrentParallelRequests.Add(1)
 
+	fmt.Println("size", bns.Queue.Len())
 	nexusItem = bns.Queue.Pop()
 
 	bns.Unpause(nexusItem.Name)
@@ -69,7 +70,7 @@ func (bns *BaseNexusScheduler) Pop() (nexusItem *structs.NexusItem) {
 }
 
 func (bns *BaseNexusScheduler) SendToExecutionChannel(functionName string) {
-	if bns.executionChannel == nil {
+	if bns.executionChannel == nil || models.CHANNEL_SIZE == cap(bns.executionChannel) {
 		return
 	}
 	// fmt.Println("Sending to execution channel:", functionName)
@@ -93,6 +94,7 @@ func (bns *BaseNexusScheduler) CallSynchronized(nexusItem *structs.NexusItem) {
 	newRequest := utils.TransformRequestToClientRequest(nexusItem.Request)
 
 	bns.evaluateInvocation(nexusItem)
+	fmt.Println("Sending request to Nuclio:", newRequest.Header)
 	_, err := bns.client.Do(newRequest)
 	if err != nil {
 		fmt.Println("Error sending request to Nuclio:", err)

@@ -1,14 +1,10 @@
 package nexus
 
 import (
-	"log"
-	"sync"
-	"sync/atomic"
-	"time"
-
 	bulk "github.com/nuclio/nuclio/pkg/nexus/bulk/scheduler"
 	"github.com/nuclio/nuclio/pkg/nexus/common/env"
 	"github.com/nuclio/nuclio/pkg/nexus/common/load-balancer"
+	"github.com/nuclio/nuclio/pkg/nexus/common/models"
 	"github.com/nuclio/nuclio/pkg/nexus/common/models/config"
 	"github.com/nuclio/nuclio/pkg/nexus/common/models/interfaces"
 	common "github.com/nuclio/nuclio/pkg/nexus/common/models/structs"
@@ -16,6 +12,10 @@ import (
 	"github.com/nuclio/nuclio/pkg/nexus/common/scheduler"
 	deadline "github.com/nuclio/nuclio/pkg/nexus/deadline/scheduler"
 	"github.com/nuclio/nuclio/pkg/nexus/elastic-deploy"
+	"log"
+	"sync"
+	"sync/atomic"
+	"time"
 )
 
 // Nexus is the main core of the profaastinate system
@@ -44,7 +44,7 @@ func Initialize() (nexus *Nexus) {
 	var maxParallelRequests atomic.Int32
 	maxParallelRequests.Store(1)
 
-	channel := make(chan string, maxParallelRequests.Load()*10)
+	channel := make(chan string, models.CHANNEL_SIZE)
 
 	nexusConfig := config.NewNexusConfig(&maxParallelRequests, channel)
 

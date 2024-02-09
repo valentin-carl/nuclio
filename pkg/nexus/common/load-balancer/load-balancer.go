@@ -168,8 +168,7 @@ func (lb *LoadBalancer) AutoBalance() {
 			}
 
 			lb.maxParallelRequests.Store(int32(avgDesiredNumber))
-			lb.functionExecutionChannel = make(chan string, avgDesiredNumber*10)
-			//fmt.Printf("The maxProcessingRequests was set to %d\n", avgDesiredNumber)
+			fmt.Printf("The maxProcessingRequests was set to %d\n", avgDesiredNumber)
 			return
 		}
 	}
