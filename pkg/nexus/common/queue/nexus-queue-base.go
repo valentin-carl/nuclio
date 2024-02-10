@@ -2,6 +2,7 @@ package common
 
 import (
 	"container/heap"
+	"fmt"
 	"sync"
 	"time"
 
@@ -68,12 +69,22 @@ func Initialize() *NexusQueue {
 }
 
 // RemoveAll removes all items from the queue without returning them and ignoring the lock
-func (p *NexusQueue) removeAllNotBlocking(nexusItems []*structs.NexusItem) {
+func (p *NexusQueue) removeAllNotBlocking(nexusItems []*structs.NexusItem) (removedItems []*structs.NexusItem) {
 	for _, item := range nexusItems {
-		if item.Index != -1 {
-			heap.Remove(p.impl, item.Index)
+		if item == nil {
+			fmt.Println("item was already removed")
+			continue
 		}
+
+		if item.Index == -1 {
+			fmt.Printf("Item has index 1")
+			continue
+		}
+
+		removedItem := heap.Remove(p.impl, item.Index)
+		removedItems = append(removedItems, removedItem.(*structs.NexusItem))
 	}
+	return
 }
 
 // getAllItemsUntilDeadlineNotBlocking returns all items from the queue until the deadline without returning them and ignoring the lock

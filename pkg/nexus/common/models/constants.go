@@ -1,5 +1,7 @@
 package models
 
+type SchedulerName string
+
 // The following constants are used in the nexus throughout utils, helper function, tests and more.
 const (
 	HTTP_SCHEME              = "http"
@@ -12,4 +14,8 @@ const (
 	EVALUATION_HOST = "host.docker.internal"
 
 	CHANNEL_SIZE = 10000
+
+	DEADLINE_SCHEDULER_NAME SchedulerName = "deadline"
+	BULK_SCHEDULER_NAME     SchedulerName = "bulk"
+	IDLE_SCHEDULER_NAME     SchedulerName = "idle"
 )

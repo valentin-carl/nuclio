@@ -1,6 +1,7 @@
 package deadline
 
 import (
+	models2 "github.com/nuclio/nuclio/pkg/nexus/common/models"
 	"time"
 
 	"github.com/nuclio/nuclio/pkg/nexus/common/models/interfaces"
@@ -22,8 +23,11 @@ type DeadlineScheduler struct {
 
 // NewScheduler creates a new deadline scheduler
 func NewScheduler(baseNexusScheduler *scheduler.BaseNexusScheduler, deadlineConfig models.DeadlineSchedulerConfig) *DeadlineScheduler {
+	baseScheduler := baseNexusScheduler
+	baseScheduler.Name = models2.DEADLINE_SCHEDULER_NAME
+
 	return &DeadlineScheduler{
-		BaseNexusScheduler:      *baseNexusScheduler,
+		BaseNexusScheduler:      *baseScheduler,
 		DeadlineSchedulerConfig: deadlineConfig,
 	}
 }

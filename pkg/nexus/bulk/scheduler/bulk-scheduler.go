@@ -1,6 +1,7 @@
 package scheduler
 
 import (
+	models2 "github.com/nuclio/nuclio/pkg/nexus/common/models"
 	"time"
 
 	"github.com/nuclio/nuclio/pkg/nexus/bulk/models"
@@ -23,8 +24,11 @@ type BulkScheduler struct {
 
 // NewScheduler creates a new bulk scheduler
 func NewScheduler(baseNexusScheduler *scheduler.BaseNexusScheduler, bulkConfig models.BulkSchedulerConfig) *BulkScheduler {
+	baseScheduler := baseNexusScheduler
+	baseScheduler.Name = models2.BULK_SCHEDULER_NAME
+
 	return &BulkScheduler{
-		BaseNexusScheduler:  *baseNexusScheduler,
+		BaseNexusScheduler:  *baseScheduler,
 		BulkSchedulerConfig: bulkConfig,
 	}
 }
@@ -77,12 +81,15 @@ func (ds *BulkScheduler) executeSchedule() {
 // callAndRemoveItems calls the items synchronously on the default nuclio endpoint
 // then they are removed them from the nexus queue
 func (ds *BulkScheduler) callAndRemoveItems(items []*structs.NexusItem) {
-	copiedItems := make([]*structs.NexusItem, len(items))
-	copy(copiedItems, items)
-	ds.Unpause(copiedItems[0].Name)
-	ds.CurrentParallelRequests.Add(int32(len(copiedItems)))
+	removedItems := ds.Queue.RemoveAll(items)
+	if len(removedItems) == 0 {
+		return
+	}
 
-	for _, item := range items {
+	ds.Unpause(removedItems[0].Name)
+	ds.CurrentParallelRequests.Add(int32(len(removedItems)))
+
+	for _, item := range removedItems {
 
 		go func(item *structs.NexusItem) {
 			defer ds.CurrentParallelRequests.Add(-1)
@@ -92,5 +99,4 @@ func (ds *BulkScheduler) callAndRemoveItems(items []*structs.NexusItem) {
 		}(item)
 
 	}
-	ds.Queue.RemoveAll(items)
 }

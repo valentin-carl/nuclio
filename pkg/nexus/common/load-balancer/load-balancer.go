@@ -25,7 +25,7 @@ type LoadBalancer struct {
 	// The time between two load calculations, used to avoid thrashing
 	slidingWindowsDuration time.Duration
 	// The channel that contains the function names that are executed
-	functionExecutionChannel chan string
+	functionExecutionChannel *chan string
 	// The target load for the CPU
 	targetLoadCPU float64
 	// The target load for the Memory
@@ -33,14 +33,14 @@ type LoadBalancer struct {
 }
 
 // NewLoadBalancer creates a new LoadBalancer
-func NewLoadBalancer(maxParallelRequests *atomic.Int32, executionChannel chan string, collectionTime time.Duration, targetLoadCPU, targetLoadMemory float64) *LoadBalancer {
+func NewLoadBalancer(maxParallelRequests *atomic.Int32, executionChannel *chan string, slidingWindowsDuration time.Duration, targetLoadCPU, targetLoadMemory float64) *LoadBalancer {
 	return &LoadBalancer{
 		maxParallelRequests:      maxParallelRequests,
 		functionExecutionChannel: executionChannel,
 		runningFlag:              false,
 		targetLoadCPU:            targetLoadCPU,
 		targetLoadMemory:         targetLoadMemory,
-		slidingWindowsDuration:   collectionTime,
+		slidingWindowsDuration:   slidingWindowsDuration,
 	}
 }
 
@@ -49,7 +49,7 @@ func NewLoadBalancer(maxParallelRequests *atomic.Int32, executionChannel chan st
 // slidingWindowsDuration: 1 minute
 // targetLoadCPU: 0
 // targetLoadMemory: 0
-func NewDefaultLoadBalancer(maxParallelRequests *atomic.Int32, executionChannel chan string) *LoadBalancer {
+func NewDefaultLoadBalancer(maxParallelRequests *atomic.Int32, executionChannel *chan string) *LoadBalancer {
 	return NewLoadBalancer(maxParallelRequests, executionChannel, 1*time.Minute, 0, 0)
 }
 
@@ -61,7 +61,9 @@ func (lb *LoadBalancer) Initialize() {
 func (lb *LoadBalancer) Start() {
 	lb.runningFlag = true
 
+	fmt.Println("Starting LoadBalancer")
 	for lb.runningFlag {
+		fmt.Println("In running flag")
 		lb.AutoBalance()
 
 		time.Sleep(lb.slidingWindowsDuration)
@@ -124,25 +126,30 @@ func (lb *LoadBalancer) CalculateDesiredNumberOfRequestsMemory(numberOfExecutedF
 // It tries to align the system load with the target load for the CPU and Memory
 // For more information see profaastinate/docs/diagrams/uml/activity/load-balancer-schedule.puml
 func (lb *LoadBalancer) AutoBalance() {
-	//fmt.Printf("AutoBalancing")
+	fmt.Printf("AutoBalancing")
 
 	executedFunctionMap := make(map[string]int)
 	numberOfExecutedFunctionCalls := 0
 	for {
+		numItems := len(*lb.functionExecutionChannel)
+		fmt.Printf("Items in channel: %d\n", numItems)
 		select {
-		case executedFunction, ok := <-lb.functionExecutionChannel:
+		case executedFunction, ok := <-*lb.functionExecutionChannel:
 			if !ok {
 				// Used after no item is left in the channel
-
+				fmt.Println("Channel is closed")
 				return
 			}
 			executedFunctionMap[executedFunction]++
 			numberOfExecutedFunctionCalls++
 
 		default:
-			//fmt.Printf("No item in channel")
-			fmt.Print(executedFunctionMap)
+			fmt.Println("Default case")
+			if numberOfExecutedFunctionCalls == 0 {
+				return
+			}
 
+			fmt.Printf("The number of executed function calls is %d\n", numberOfExecutedFunctionCalls)
 			// Used when the channel is empty
 			if numberOfExecutedFunctionCalls == 0 {
 				return
@@ -152,6 +159,7 @@ func (lb *LoadBalancer) AutoBalance() {
 
 			switch {
 			case lb.targetLoadCPU == 0 && lb.targetLoadMemory == 0:
+				fmt.Println("No target load set")
 				return
 			case lb.targetLoadCPU == 0:
 				avgDesiredNumber = lb.CalculateDesiredNumberOfRequestsMemory(numberOfExecutedFunctionCalls)
@@ -163,6 +171,7 @@ func (lb *LoadBalancer) AutoBalance() {
 				avgDesiredNumber = (desiredNumberMemory + desiredNumberCPU) / 2
 			}
 
+			fmt.Printf("The avgDesiredNumber is %d\n", avgDesiredNumber)
 			if lb.limitParallelRequests > 0 && lb.limitParallelRequests < avgDesiredNumber {
 				avgDesiredNumber = lb.limitParallelRequests
 			}

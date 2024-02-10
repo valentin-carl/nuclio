@@ -1,6 +1,7 @@
 package idle
 
 import (
+	"github.com/nuclio/nuclio/pkg/nexus/common/models"
 	"time"
 
 	"github.com/nuclio/nuclio/pkg/nexus/common/models/interfaces"
@@ -17,6 +18,9 @@ type IdleScheduler struct {
 
 // NewScheduler creates a new idle scheduler
 func NewScheduler(baseNexusScheduler *common.BaseNexusScheduler) *IdleScheduler {
+	baseScheduler := baseNexusScheduler
+	baseScheduler.Name = models.IDLE_SCHEDULER_NAME
+
 	return &IdleScheduler{
 		BaseNexusScheduler: *baseNexusScheduler,
 	}

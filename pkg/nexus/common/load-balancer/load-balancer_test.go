@@ -15,10 +15,10 @@ type LoadBalancerTestSuite struct {
 }
 
 func (suite *LoadBalancerTestSuite) populateChannel() {
-	suite.loadBalancer.functionExecutionChannel <- "test-hello-world"
-	suite.loadBalancer.functionExecutionChannel <- "test-hello-world"
-	suite.loadBalancer.functionExecutionChannel <- "test-bye-world"
-	suite.loadBalancer.functionExecutionChannel <- "test-bye-world"
+	*suite.loadBalancer.functionExecutionChannel <- "test-hello-world"
+	*suite.loadBalancer.functionExecutionChannel <- "test-hello-world"
+	*suite.loadBalancer.functionExecutionChannel <- "test-bye-world"
+	*suite.loadBalancer.functionExecutionChannel <- "test-bye-world"
 }
 
 func (suite *LoadBalancerTestSuite) SetupTest() {
@@ -37,7 +37,7 @@ func (suite *LoadBalancerTestSuite) SetupTest() {
 
 	suite.loadBalancer = NewLoadBalancer(
 		&maxParallelRequests,
-		executionChannel,
+		&executionChannel,
 		1*time.Second,
 		50.0,
 		50.0,

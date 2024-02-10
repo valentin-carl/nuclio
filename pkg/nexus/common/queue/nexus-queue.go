@@ -41,18 +41,6 @@ func (p *NexusQueue) Pop() *structs.NexusItem {
 	return el.(*structs.NexusItem)
 }
 
-// PopBulkUntilDeadline pops all items from the queue until the deadline
-func (p *NexusQueue) PopBulkUntilDeadline(deadline time.Time) []*structs.NexusItem {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	items := p.getAllItemsUntilDeadlineNotBlocking(deadline)
-
-	p.removeAllNotBlocking(items)
-
-	return items
-}
-
 // Peek returns the first item from the queue without removing it
 func (p *NexusQueue) Peek() *structs.NexusItem {
 	p.mu.RLock()
@@ -70,11 +58,11 @@ func (p *NexusQueue) Remove(item *structs.NexusItem) {
 }
 
 // RemoveAll removes all given items from the queue
-func (p *NexusQueue) RemoveAll(nexusItems []*structs.NexusItem) {
+func (p *NexusQueue) RemoveAll(nexusItems []*structs.NexusItem) (removedItems []*structs.NexusItem) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	p.removeAllNotBlocking(nexusItems)
+	return p.removeAllNotBlocking(nexusItems)
 }
 
 // GetMostCommonEntryItems checks which entry has the most items by name in the queue and returns them

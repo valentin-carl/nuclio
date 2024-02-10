@@ -29,11 +29,12 @@ type BaseNexusScheduler struct {
 	client *http.Client
 	// The deployer to use for unpausing / resuming functions
 	deployer         *elastic_deploy.ProElasticDeploy
-	executionChannel chan string
+	executionChannel *chan string
+	Name             models.SchedulerName
 }
 
 // NewBaseNexusScheduler creates a new base scheduler
-func NewBaseNexusScheduler(queue *queue.NexusQueue, config *config.BaseNexusSchedulerConfig, nexusConfig *config.NexusConfig, client *http.Client, deployer *elastic_deploy.ProElasticDeploy, executionChannel chan string) *BaseNexusScheduler {
+func NewBaseNexusScheduler(queue *queue.NexusQueue, config *config.BaseNexusSchedulerConfig, nexusConfig *config.NexusConfig, client *http.Client, deployer *elastic_deploy.ProElasticDeploy, executionChannel *chan string) *BaseNexusScheduler {
 	return &BaseNexusScheduler{
 		BaseNexusSchedulerConfig: config,
 		Queue:                    queue,
@@ -46,7 +47,7 @@ func NewBaseNexusScheduler(queue *queue.NexusQueue, config *config.BaseNexusSche
 }
 
 // NewDefaultBaseNexusScheduler creates a new base scheduler with default config
-func NewDefaultBaseNexusScheduler(queue *queue.NexusQueue, nexusConfig *config.NexusConfig, deployer *elastic_deploy.ProElasticDeploy, executionChannel chan string) *BaseNexusScheduler {
+func NewDefaultBaseNexusScheduler(queue *queue.NexusQueue, nexusConfig *config.NexusConfig, deployer *elastic_deploy.ProElasticDeploy, executionChannel *chan string) *BaseNexusScheduler {
 	baseSchedulerConfig := config.NewDefaultBaseNexusSchedulerConfig()
 	return NewBaseNexusScheduler(queue, &baseSchedulerConfig, nexusConfig, &http.Client{}, deployer, executionChannel)
 }
@@ -56,25 +57,11 @@ func (bns *BaseNexusScheduler) Push(elem *structs.NexusItem) {
 	bns.Queue.Push(elem)
 }
 
-// Pop removes and returns the first element from the queue
-func (bns *BaseNexusScheduler) Pop() (nexusItem *structs.NexusItem) {
-	bns.CurrentParallelRequests.Add(-1)
-	defer bns.CurrentParallelRequests.Add(1)
-
-	fmt.Println("size", bns.Queue.Len())
-	nexusItem = bns.Queue.Pop()
-
-	bns.Unpause(nexusItem.Name)
-	bns.CallSynchronized(nexusItem)
-	return
-}
-
 func (bns *BaseNexusScheduler) SendToExecutionChannel(functionName string) {
-	if bns.executionChannel == nil || models.CHANNEL_SIZE == cap(bns.executionChannel) {
-		return
+	if len(*bns.executionChannel) == cap(*bns.executionChannel) {
+		fmt.Println("Execution channel is full, cannot send to execution channel:", functionName)
 	}
-	// fmt.Println("Sending to execution channel:", functionName)
-	bns.executionChannel <- functionName
+	*bns.executionChannel <- functionName
 }
 
 // Unpause ensures that the function container is running
@@ -91,9 +78,9 @@ func (bns *BaseNexusScheduler) Unpause(functionName string) {
 
 // CallSynchronized calls the function synchronously on the default nuclio endpoint
 func (bns *BaseNexusScheduler) CallSynchronized(nexusItem *structs.NexusItem) {
+	bns.evaluateInvocation(nexusItem)
 	newRequest := utils.TransformRequestToClientRequest(nexusItem.Request)
 
-	bns.evaluateInvocation(nexusItem)
 	fmt.Println("Sending request to Nuclio:", newRequest.Header)
 	_, err := bns.client.Do(newRequest)
 	if err != nil {
@@ -103,7 +90,6 @@ func (bns *BaseNexusScheduler) CallSynchronized(nexusItem *structs.NexusItem) {
 
 // Deprecated: evaluateInvocation evaluates the invocation of a function - It just used for testing
 func (bns *BaseNexusScheduler) evaluateInvocation(nexusItem *structs.NexusItem) {
-
 	var evaluationUrl url.URL
 	evaluationUrl.Scheme = models.HTTP_SCHEME
 	evaluationUrl.Path = models.EVALUATION_PATH
@@ -118,6 +104,7 @@ func (bns *BaseNexusScheduler) evaluateInvocation(nexusItem *structs.NexusItem) 
 	req.URL = &evaluationUrl
 	req.Header.Set("x-nuclio-function-name", nexusItem.Name)
 	req.Header.Set("x-profaastinate-process-deadline", nexusItem.Deadline.Format(time.RFC3339))
+	req.Header.Set("x-profaastinate-scheduler-name", string(bns.Name))
 
 	// Make the request
 	resp, postErr := bns.client.Do(req)
