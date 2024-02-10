@@ -5,14 +5,22 @@ Proofaastinate is build on top of [Nuclio](https://nuclio.io) and uses the [Nexu
 
 ## Overview
 
+### General
 | Name        | Path                          | Description                                                                                        |
 |-------------|-------------------------------|----------------------------------------------------------------------------------------------------|
 | Deployment  | [/deployment](./deployment)   | Helps to build profaastinate inside docker or minikube                                             |
 | deprecated  | [/deprecated](./deprecated)   | Contains deprecated legacy code.                                                                   |
 | Docs        | [/docs](./docs)               | Contains documentation like uml diagrams to understand the code base better                        |
-| Evaluation  | [/evaluation](./evaluation)   | Deprecated evulation REST Server which allowed to verify certain requests.                         |
 | Prototyping | [/prototyping](./prototyping) | Acts as a playground to try out packages and ideas, before implementing features inside the Nexus  |
 | Tests       | [/tests](./tests)             | Contains commands for checking the software for lint and test errors, which are also stored there. |
+
+### Evaluation
+| Name            | Path                                                        | Description                                                                                |
+|-----------------|-------------------------------------------------------------|--------------------------------------------------------------------------------------------|
+| Counter Backend | [/evaluation/counter-backend](./evaluation/counter-backend) | Evulation REST Server which allowed to verify requests when the async function is handled. |
+| Data Analyser   | [/evaluation/data-analysis](./evaluation/data-analysis)     | Python script which is able to analyse the logs from the counter backend.                  |
+| K6              | [/evaluation/k6](./evaluation/k6)                           | Load testing tool which was used to test the performance of the async function.            |
+
 
 ## Getting started
 
