@@ -100,6 +100,18 @@ func newTrigger(logger logger.Logger,
 		internalHealthPath: []byte(InternalHealthPath),
 	}
 
+	// SAND SAND SAND
+	if containerPort := os.Getenv("SAND_PORT_INTERNAL"); containerPort != "" {
+		newTrigger.Logger.Info("found value for 'SAND_PORT_INTERNAL': %s", containerPort)
+		newTrigger.configuration.URL = fmt.Sprintf(":%s", containerPort)
+		newTrigger.Logger.Info("set 'configuration.URL' to : %s", containerPort)
+	} else {
+		newTrigger.Logger.Info("no value found for 'SAND_PORT_INTERNAL'")
+	}
+	newTrigger.Logger.Info("trigger configuration:")
+	newTrigger.Logger.Info(newTrigger.configuration)
+	// SAND SAND SAND
+
 	newTrigger.AbstractTrigger.Trigger = &newTrigger
 	newTrigger.allocateEvents(numWorkers)
 	return &newTrigger, nil
