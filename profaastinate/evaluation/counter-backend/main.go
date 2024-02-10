@@ -15,7 +15,8 @@ const (
 	EVALUATION_HEADERS     = "/evaluation/headers"
 	ASYNC_DEADLINE         = "x-profaastinate-process-deadline"
 	FUNCTION_NAME          = "x-nuclio-function-name"
-	RELATIVE_PATH_LOG_PATH = "profaastinate/evaluation/counter-backend/logs"
+	SCHEDULER_NAME         = "x-profaastinate-scheduler-name"
+	RELATIVE_PATH_LOG_PATH = "profaastinate/evaluation/data-analysis/logs/"
 	ASYNC_EVALUATION_NAME  = "async.log"
 	NORMAL_EVALUATION_NAME = "normal.log"
 )
@@ -33,7 +34,7 @@ var (
 )
 
 func initLogger(filename string) {
-	logFilePath := RELATIVE_PATH_LOG_PATH + "-" + filename
+	logFilePath := RELATIVE_PATH_LOG_PATH + filename
 	_, err := os.Stat(logFilePath)
 	if os.IsNotExist(err) {
 		errDir := os.MkdirAll(filepath.Dir(logFilePath), 0755)
@@ -48,7 +49,7 @@ func initLogger(filename string) {
 	}
 
 	logFile[filename] = file
-	logger = log.New(file, "", log.LstdFlags)
+	logger = log.New(file, "", 0)
 }
 
 func (c *Counter) handleFunctionInvocations(w http.ResponseWriter, r *http.Request) {
@@ -82,20 +83,22 @@ func (c *Counter) handleFunctionInvocations(w http.ResponseWriter, r *http.Reque
 	}
 }
 
-func logToFile(deadline string, functionName string) {
+func logToFile(deadline string, functionName string, schedulerName string) {
 	if deadline == "" {
 		log.SetOutput(logFile[NORMAL_EVALUATION_NAME])
 		log.Printf("%s", functionName)
 	} else {
 		log.SetOutput(logFile[ASYNC_EVALUATION_NAME])
-		log.Printf("%s - %s", deadline, functionName)
+		log.Printf("%s - %s", functionName, schedulerName)
 	}
 }
 
 func (c *Counter) handleFunctionHeaders(w http.ResponseWriter, r *http.Request) {
 	functionName := r.Header.Get(FUNCTION_NAME)
 	deadline := r.Header.Get(ASYNC_DEADLINE)
-	logToFile(deadline, functionName)
+	schedulerName := r.Header.Get(SCHEDULER_NAME)
+
+	logToFile(deadline, functionName, schedulerName)
 }
 
 func main() {
@@ -110,8 +113,8 @@ func main() {
 	server := &http.Server{
 		Addr:         ":8888",
 		Handler:      nil,
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 10 * time.Second,
+		ReadTimeout:  1000 * time.Millisecond,
+		WriteTimeout: 1000 * time.Millisecond,
 	}
 
 	// Set up HTTP server with two endpoints
