@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.options = exports.buildHeader = exports.HeaderKey = exports.StatusCode = exports.FunctionName = exports.Endpoint = void 0;
+exports.options = exports.buildHeader = exports.HeaderKey = exports.Duration = exports.StatusCode = exports.FunctionName = exports.Endpoint = void 0;
 const http_1 = __importDefault(require("k6/http"));
 const k6_1 = require("k6");
 /**
@@ -22,6 +22,10 @@ var StatusCode;
 (function (StatusCode) {
     StatusCode[StatusCode["OK"] = 204] = "OK";
 })(StatusCode || (exports.StatusCode = StatusCode = {}));
+var Duration;
+(function (Duration) {
+    Duration["THIRTY_SECONDS"] = "30s";
+})(Duration || (exports.Duration = Duration = {}));
 /**
  * Enum for Nuclio header keys
  */
@@ -31,30 +35,36 @@ var HeaderKey;
     HeaderKey["FUNCTION_NAMESPACE"] = "x-nuclio-function-namespace";
     HeaderKey["ASYNC_DEADLINE"] = "x-profaastinate-process-deadline";
 })(HeaderKey || (exports.HeaderKey = HeaderKey = {}));
-function buildHeader(functionName, deadline, namespace = 'default') {
+function buildHeader(functionName, deadline, namespace) {
     let headers = {};
     headers[HeaderKey.FUNCTION_NAME] = functionName;
-    headers[HeaderKey.FUNCTION_NAMESPACE] = namespace;
     if (deadline) {
         headers[HeaderKey.ASYNC_DEADLINE] = `${deadline}`;
+    }
+    if (namespace) {
+        headers[HeaderKey.FUNCTION_NAMESPACE] = namespace;
     }
     return headers;
 }
 exports.buildHeader = buildHeader;
 exports.options = {
     scenarios: {
-        constant_request_rate: {
-            executor: "constant-arrival-rate",
-            rate: 10,
-            timeUnit: "1s", // 1000 iterations per second, i.e. 1000 RPS
-            duration: "20s",
-            preAllocatedVUs: 1, // the size of the VU (virtual user) pool for the executor
-            maxVUs: 10, // the maximum number of VUs the executor is allowed to scale to
+        ramping_arrival_rate: {
+            executor: 'ramping-arrival-rate',
+            startRate: 250,
+            timeUnit: Duration.THIRTY_SECONDS, // 50 iterations per minute
+            preAllocatedVUs: 50, // pre-allocate 50 VUs
+            maxVUs: 100,
+            stages: [
+                { target: 500, duration: Duration.THIRTY_SECONDS }, // ramp to 100 iterations per minute
+                { target: 1000, duration: Duration.THIRTY_SECONDS }, // stay at 100 for 5 minutes
+                { target: 100, duration: Duration.THIRTY_SECONDS }, // ramp down to 10 iterations per minute
+            ],
         },
     },
 };
 function callAsyncHello1() {
-    const plainFunctionHeader = buildHeader(FunctionName.HELLO_1, 10000);
+    const plainFunctionHeader = buildHeader(FunctionName.HELLO_1, 30000);
     const res = http_1.default.get(Endpoint.INVOCATION_URL, {
         headers: plainFunctionHeader,
     });
@@ -71,6 +81,6 @@ function callSyncHello1() {
     (0, k6_1.check)(res, { "status was 200": (r) => r.status == StatusCode.OK });
 }
 function default_1() {
-    callSyncHello1();
+    callAsyncHello1();
 }
 exports.default = default_1;
