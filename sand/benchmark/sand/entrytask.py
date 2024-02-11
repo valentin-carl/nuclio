@@ -30,10 +30,11 @@ def handler(context, event):
         channel = connection.channel()
         channel.basic_publish(exchange="", routing_key=function_name, body=payload)
         connection.close()
-        target, actual = int(event.body), 0
     
-        payload = json.dumps({"target": target, "actual": actual})
-        invoke("additiontask", payload)
+    target, actual = int(event.body), 0
+
+    payload = json.dumps({"target": target, "actual": actual})
+    invoke("additiontask", payload)
 
     def wait_for_result():
 
