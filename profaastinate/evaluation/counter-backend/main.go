@@ -8,17 +8,23 @@ import (
 	"path/filepath"
 	"sync"
 	"time"
+
+	"github.com/shirou/gopsutil/cpu"
 )
 
 const (
-	EVALUATION_INVOCATION  = "/evaluation/invocation"
-	EVALUATION_HEADERS     = "/evaluation/headers"
-	ASYNC_DEADLINE         = "x-profaastinate-process-deadline"
-	FUNCTION_NAME          = "x-nuclio-function-name"
-	SCHEDULER_NAME         = "x-profaastinate-scheduler-name"
-	RELATIVE_PATH_LOG_PATH = "profaastinate/evaluation/data-analysis/logs/"
-	ASYNC_EVALUATION_NAME  = "async.log"
-	NORMAL_EVALUATION_NAME = "normal.log"
+	EVALUATION_INVOCATION     = "/evaluation/invocation"
+	EVALUATION_HEADERS        = "/evaluation/headers"
+	SCHEDULER_NAME            = "x-profaastinate-scheduler-name"
+	EVALUATION_FUNCTION_START = "/evaluation/function-start"
+	EVALUATION_FUNCTION_END   = "/evaluation/function-end"
+	ASYNC_DEADLINE            = "x-profaastinate-process-deadline"
+	FUNCTION_NAME             = "x-nuclio-function-name"
+	FUNCTION_STATUS           = "x-nuclio-function-status" // start, end, invocation
+	RELATIVE_PATH_LOG_PATH    = "profaastinate/evaluation/counter-backend/logs"
+	ASYNC_EVALUATION_NAME     = "async.log"
+	NORMAL_EVALUATION_NAME    = "normal.log"
+	CPU_USAGE                 = "cpu-usage.log"
 )
 
 // Counter struct holds the count and a mutex to ensure safe access
@@ -102,12 +108,14 @@ func (c *Counter) handleFunctionHeaders(w http.ResponseWriter, r *http.Request) 
 }
 
 func main() {
+
 	logFile = make(map[string]*os.File)
-	logsList := []string{ASYNC_EVALUATION_NAME, NORMAL_EVALUATION_NAME}
+	logsList := []string{ASYNC_EVALUATION_NAME, NORMAL_EVALUATION_NAME, CPU_USAGE}
 	for _, logName := range logsList {
 		initLogger(logName)
 		defer logFile[logName].Close()
 	}
+
 	counter := &Counter{count: 0, headers: make([]http.Header, 0)}
 
 	server := &http.Server{
@@ -121,9 +129,28 @@ func main() {
 	http.HandleFunc(EVALUATION_INVOCATION, counter.handleFunctionInvocations)
 	http.HandleFunc(EVALUATION_HEADERS, counter.handleFunctionHeaders)
 
+	// Log CPU usage
+	//go logCPUUsage()
+
 	// Start the server
 	fmt.Println("Server listening on :8888")
 	if err := server.ListenAndServe(); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
+	}
+}
+
+func logCPUUsage() {
+	for {
+		cpu, err := cpu.Percent(time.Second, false)
+		if err != nil {
+			log.Fatalf("Failed to get CPU usage: %v", err)
+		}
+
+		log.SetOutput(logFile[CPU_USAGE])
+
+		// cpu usage with time stamp
+		log.Printf("CPU Usage: %v%%", cpu)
+		// Sleep for a while before checking again
+		time.Sleep(time.Second)
 	}
 }

@@ -10,7 +10,7 @@ export const options = {
   
         executor: 'per-vu-iterations',
   
-        vus: 20,
+        vus: 15,
   
         iterations: 20,
   
@@ -21,27 +21,32 @@ export const options = {
     },
 };
 
-  const req3 = {
-    method: 'GET',
-    url: 'http://localhost:8070/api/function_invocationst',
+const URL = 'http://localhost:8070/api/function_invocations';
+
+export default function () {
+  const vanilla = {
+    method: 'POST',
+    url: URL,
+    body: "5000000",
     params: {
-        headers: {
-            'X-Nuclio-Function-Name': 'hello-1',
-            'X-Nuclio-Function-Namespace': 'default'
-          }
+      headers: { "X-Nuclio-Function-Name": 'vanilla' },
+    },
+  };
+  const second = {
+    method: 'POST',
+    url: URL,
+    body: "5000000",
+    params: {
+      headers: { "X-Nuclio-Function-Name": 'second' },
     },
   };
 
-let count = 0;
 
-export default function () {
-  const headers = {
-    'X-Nuclio-Function-Name': 'hello-1',
-    'X-Nuclio-Function-Namespace': 'default'
-  };
-  const res = http.get('http://localhost:8070/api/function_invocations', { headers: headers });
+  const res = http.batch([vanilla, second]);
+  
 
-  check(res, { 'status was 200': (r) => r.status == 200 });
+
+  check(res[0], { 'status was 200': (r) => r.status == 200 });
 }
 
 
