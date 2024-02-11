@@ -1,0 +1,249 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "2"
+    nuclio.io/controller-version: latest
+    nuclio.io/function-config: '{"handler":"main:handler","runtime":"python:3.9","env":[{"name":"SAND_PORT_INTERNAL","value":"8080"}],"resources":{"requests":{"cpu":"25m","memory":"1Mi"}},"image":"localhost:5000/nuclio/processor-entrytask:latest","imageHash":"1707666342846540639","triggers":{"default-http":{"class":"","kind":"http","name":"default-http","maxWorkers":1,"attributes":{"serviceType":"ClusterIP"}}},"version":-1,"alias":"latest","build":{"functionSourceCode":"aW1wb3J0IHBpa2ENCmltcG9ydCBqc29uDQoNCg0KYnJva2VyX3VybCA9ICJhbXFwOi8vamVmZjpqZWZmQGxvY2FsaG9zdDo1NjcyLyUyRiINCg0KZGVmIGludm9rZShmdW5jdGlvbl9uYW1lOiBzdHIsIHBheWxvYWQ6IGFueSkgLT4gTm9uZToNCiAgICBjb25uZWN0aW9uID0gcGlrYS5CbG9ja2luZ0Nvbm5lY3Rpb24ocGlrYS5VUkxQYXJhbWV0ZXJzKGJyb2tlcl91cmwpKQ0KICAgIGNoYW5uZWwgPSBjb25uZWN0aW9uLmNoYW5uZWwoKQ0KICAgIGNoYW5uZWwuYmFzaWNfcHVibGlzaChleGNoYW5nZT0iIiwgcm91dGluZ19rZXk9ZnVuY3Rpb25fbmFtZSwgYm9keT1wYXlsb2FkKQ0KICAgIGNvbm5lY3Rpb24uY2xvc2UoKQ0KDQpkZWYgaGFuZGxlcihjb250ZXh0LCBldmVudCk6DQoNCiAgICB0YXJnZXQsIGFjdHVhbCA9IGludChldmVudC5ib2R5KSwgMA0KDQogICAgcGF5bG9hZCA9IGpzb24uZHVtcHMoeyJ0YXJnZXQiOiB0YXJnZXQsICJhY3R1YWwiOiBhY3R1YWx9KQ0KICAgIGludm9rZSgiYWRkaXRpb250YXNrIiwgcGF5bG9hZCkNCg0KICAgIGRlZiB3YWl0X2Zvcl9yZXN1bHQoKToNCg0KICAgICAgICBjb25uZWN0aW9uID0gcGlrYS5CbG9ja2luZ0Nvbm5lY3Rpb24ocGlrYS5VUkxQYXJhbWV0ZXJzKGJyb2tlcl91cmwpKQ0KICAgICAgICBjaGFubmVsID0gY29ubmVjdGlvbi5jaGFubmVsKCkNCiAgICAgICAgY2hhbm5lbC5xdWV1ZV9kZWNsYXJlKHF1ZXVlPSJlbnRyeXRhc2tfcmVzdWx0IikNCg0KICAgICAgICBkb25lID0gRmFsc2UNCiAgICAgICAgbXNnID0gTm9uZQ0KDQogICAgICAgIGRlZiBjYWxsYmFjayhjaGFubmVsLCBtZXRob2QsIHByb3BlcnRpZXMsIGJvZHkpOg0KICAgICAgICAgICAgIyBgY2FsbGJhY2sgdGFrZXMgb25lIHBvc2l0aW9uIGFyZ3VtZW50IGJ1dCBmb3VyIHdlcmUgZ2l2ZW5gID0+IGhhdCBpcmdlbmR3aWUgNCBwYXJhbXMgYXVjaCB3ZW5uIGljaCAzIG5pY2h0IGJlbnV0emUgPi48DQogICAgICAgICAgICBub25sb2NhbCBkb25lLCBtc2cNCiAgICAgICAgICAgIG1zZyA9IGJvZHkNCiAgICAgICAgICAgIGRvbmUgPSBUcnVlDQoNCiAgICAgICAgY2hhbm5lbC5iYXNpY19jb25zdW1lKHF1ZXVlPSJlbnRyeXRhc2tfcmVzdWx0Iiwgb25fbWVzc2FnZV9jYWxsYmFjaz1jYWxsYmFjaywgYXV0b19hY2s9VHJ1ZSkNCg0KICAgICAgICB3aGlsZSBub3QgZG9uZToNCiAgICAgICAgICAgIGNvbm5lY3Rpb24ucHJvY2Vzc19kYXRhX2V2ZW50cygpDQoNCiAgICAgICAgY29ubmVjdGlvbi5jbG9zZSgpDQogICAgICAgIHJldHVybiBtc2cNCg0KICAgIHJldHVybiBjb250ZXh0LlJlc3BvbnNlKA0KICAgICAgICBib2R5PXdhaXRfZm9yX3Jlc3VsdCgpLA0KICAgICAgICBjb250ZW50X3R5cGU9J3RleHQvcGxhaW4nLA0KICAgICAgICBzdGF0dXNfY29kZT0yMDANCiAgICApDQo=","registry":"localhost:5000","noBaseImagesPull":true,"commands":["pip
+      install pika"],"runtimeAttributes":{"repositories":[]},"codeEntryType":"sourceCode","timestamp":1707666343},"runRegistry":"localhost:5000","loggerSinks":[{"level":"debug"}],"platform":{},"securityContext":{},"eventTimeout":""}'
+  generation: 2
+  labels:
+    nuclio.io/app: functionres
+    nuclio.io/class: function
+    nuclio.io/function-name: entrytask
+    nuclio.io/function-version: latest
+    nuclio.io/project-name: default
+  name: nuclio-entrytask
+  namespace: default
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      nuclio.io/app: functionres
+      nuclio.io/class: function
+      nuclio.io/function-name: entrytask
+      nuclio.io/function-version: latest
+      nuclio.io/project-name: default
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        nuclio.io/image-hash: "1707666342846540639"
+      creationTimestamp: null
+      labels:
+        nuclio.io/app: functionres
+        nuclio.io/class: function
+        nuclio.io/function-name: entrytask
+        nuclio.io/function-version: latest
+        nuclio.io/project-name: default
+      name: nuclio-entrytask
+      namespace: default
+    spec:
+      containers:
+      # entrytask
+      - env:
+        - name: SAND_PORT_INTERNAL
+          value: "8080"
+        - name: NUCLIO_FUNCTION_NAME
+          value: entrytask
+        - name: NUCLIO_FUNCTION_VERSION
+          value: latest
+        - name: NUCLIO_FUNCTION_INSTANCE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        image: localhost:5000/nuclio/processor-entrytask:latest
+        imagePullPolicy: Always
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /live
+            port: 8082
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 3
+        name: nuclio
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 10
+          httpGet:
+            path: /__internal/health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 1
+          successThreshold: 1
+          timeoutSeconds: 1
+        resources:
+          requests:
+            cpu: 25m
+            memory: 1Mi
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /etc/nuclio/config/platform
+          name: platform-config-volume
+        - mountPath: /etc/nuclio/config/processor
+          name: processor-config-volume
+      # additiontask
+      - env:
+        - name: SAND_PORT_INTERNAL
+          value: "10000"
+        - name: NUCLIO_FUNCTION_NAME
+          value: additiontask
+        - name: NUCLIO_FUNCTION_VERSION
+          value: latest
+        - name: NUCLIO_FUNCTION_INSTANCE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        image: localhost:5000/nuclio/processor-additiontask:latest
+        imagePullPolicy: Always
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /live
+            port: 8082
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 3
+        name: additiontask
+        ports:
+        - containerPort: 10000
+          name: http
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 10
+          httpGet:
+            path: /__internal/health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 1
+          successThreshold: 1
+          timeoutSeconds: 1
+        resources:
+          requests:
+            cpu: 25m
+            memory: 1Mi
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /etc/nuclio/config/platform
+          name: platform-config-volume
+        - mountPath: /etc/nuclio/config/processor
+          name: processor-config-volume
+      # grainworker
+      - env:
+        - name: FUNCTION_NAME
+          value: additiontask
+        - name: FUNCTION_PORT
+          value: "10000"
+        image: localhost:5000/grainworker:latest
+        imagePullPolicy: Always
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /live
+            port: 8082
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 3
+        name: grainworker
+        readinessProbe:
+          failureThreshold: 10
+          httpGet:
+            path: /__internal/health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 1
+          successThreshold: 1
+          timeoutSeconds: 1
+        resources:
+          requests:
+            cpu: 25m
+            memory: 1Mi
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      # local-message-bus
+      - image: localhost:5000/local-message-bus:latest
+        imagePullPolicy: Always
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /live
+            port: 8082
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 3
+        name: local-message-bus
+        readinessProbe:
+          failureThreshold: 10
+          httpGet:
+            path: /__internal/health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 1
+          successThreshold: 1
+          timeoutSeconds: 1
+        resources:
+          requests:
+            cpu: 25m
+            memory: 1Mi
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: nuclio-platform-config
+          optional: true
+        name: platform-config-volume
+      - configMap:
+          defaultMode: 420
+          name: nuclio-entrytask
+        name: processor-config-volume
+status:
+  availableReplicas: 1
+  conditions:
+  - lastTransitionTime: "2024-02-11T14:34:40Z"
+    lastUpdateTime: "2024-02-11T14:34:40Z"
+    message: Deployment has minimum availability.
+    reason: MinimumReplicasAvailable
+    status: "True"
+    type: Available
+  - lastTransitionTime: "2024-02-11T14:34:35Z"
+    lastUpdateTime: "2024-02-11T15:45:49Z"
+    message: ReplicaSet "nuclio-entrytask-847d449969" has successfully progressed.
+    reason: NewReplicaSetAvailable
+    status: "True"
+    type: Progressing
+  observedGeneration: 2
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
