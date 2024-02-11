@@ -12,7 +12,6 @@ vendor
 # general
 *.class
 *.iml
-*.log
 .DS_Store
 .classpath
 .envrc
