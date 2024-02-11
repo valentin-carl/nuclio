@@ -107,11 +107,11 @@ func logToFile(functionName, schedulerName, asyncIncoming, syncProcessing, execS
 
 	if schedulerName == "" {
 		log.SetOutput(logFile[NORMAL_EVALUATION_NAME])
-		log.Printf("%s - %s - %s ", functionName, execStart, execStop)
+		log.Printf(" - %s - %s - %s ", functionName, execStart, execStop)
 
 	} else {
 		log.SetOutput(logFile[ASYNC_EVALUATION_NAME])
-		log.Printf("%s - %s - %s - %s - %s - %s", functionName, schedulerName, asyncIncoming, syncProcessing, execStart, execStop)
+		log.Printf("- %s - %s - %s - %s - %s - %s", functionName, schedulerName, asyncIncoming, syncProcessing, execStart, execStop)
 	}
 }
 
@@ -122,8 +122,6 @@ func (c *Counter) handleFunctionHeaders(w http.ResponseWriter, r *http.Request) 
 	syncProcessing := r.Header.Get(SYNC_PROCESSING)
 	execStart := r.Header.Get(EXEC_START)
 	execStop := r.Header.Get(EXEC_STOP)
-
-	fmt.Printf("%v\n", r.Header)
 
 	logToFile(functionName, schedulerName, asyncIncoming, syncProcessing, execStart, execStop)
 }
