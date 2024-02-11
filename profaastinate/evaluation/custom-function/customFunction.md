@@ -24,6 +24,7 @@ import (
 	"math"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/nuclio/nuclio-sdk-go"
 )
@@ -49,30 +50,22 @@ func primeNumbers(max uint64) []uint64 {
 		if isPrime {
 			primes = append(primes, i)
 		}
+
+        time.Sleep(5 * time.Microsecond)
 	}
 
 	return primes
 }
 
 func Handler(context *nuclio.Context, event nuclio.Event) (interface{}, error) {
-	req, err := http.NewRequest(http.MethodPost, INVOCATION_URL, nil)
-	if err != nil {
-		context.Logger.Error("Error creating request:", err)
-		return nil, err
-	}
 
-	req.Header.Set("x-nuclio-function-name", "yeet")
+	start := time.Now()
 
-	// Make the request
-	resp, postErr := http.DefaultClient.Do(req)
-	if postErr != nil {
-		context.Logger.Error("Error sending request to evaluation endpoint:", postErr)
-		return nil, postErr
-	}
+	headers := event.GetHeaders()
 
-	defer resp.Body.Close()
+	fmt.Printf("Headers: %v\n", headers)
 
-	n, err := strconv.ParseUint(string(event.GetBody()), 10, 64)
+	n, err := strconv.ParseUint(string(headers["Max"].(string)), 10, 64)
 
 	if err != nil {
 		context.Logger.Error("Error parsing input:", err)
@@ -81,10 +74,35 @@ func Handler(context *nuclio.Context, event nuclio.Event) (interface{}, error) {
 
 	primes := primeNumbers(n)
 
+	req, err := http.NewRequest(http.MethodPost, INVOCATION_URL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	for key, value := range headers {
+		req.Header.Set(key, value.(string))
+	}
+
+	req.Header.Set("X-Profaastinate-Exec-Start", start.Format(time.RFC3339))
+	req.Header.Set("X-Profaastinate-Exec-Stop", time.Now().Format(time.RFC3339))
+
+	// Make the request
+	resp, postErr := http.DefaultClient.Do(req)
+	if postErr != nil {
+		return nil, postErr
+	}
+
+	defer resp.Body.Close()
+
+	//print req header
+	fmt.Printf("Request headers: %v\n", req.Header)
+
 	return nuclio.Response{
 		StatusCode:  200,
 		ContentType: "application/text",
+		Headers:     headers,
 		Body:        []byte(fmt.Sprintf("Found %d prime numbers", len(primes))),
 	}, nil
 }
+
 ```

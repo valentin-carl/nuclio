@@ -9,8 +9,6 @@ import seaborn as sns
 class ChartFactory:
     def __init__(self):
         self.fig, self.ax = plt.subplots()
-        custom_colors = {"deadline": "#D6BCFA",
-                         "bulk": "#93C5FD"}
 
         self.custom_colors = {"deadline": "#D6BCFA",
                               "bulk": "#93C5FD"}

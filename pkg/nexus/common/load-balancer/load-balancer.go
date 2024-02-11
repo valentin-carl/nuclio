@@ -30,6 +30,8 @@ type LoadBalancer struct {
 	targetLoadCPU float64
 	// The target load for the Memory
 	targetLoadMemory float64
+	// The forced maximum number of parallel requests
+	forcedMaxParallelRequests int
 }
 
 // NewLoadBalancer creates a new LoadBalancer
@@ -87,7 +89,7 @@ func (lb *LoadBalancer) SetTargetLoadMemory(targetLoadMemory float64) {
 
 // SetLimitParallelRequests sets the highest number maxParallelRequests can be set to
 func (lb *LoadBalancer) SetLimitParallelRequests(limitParallelRequests int) {
-	lb.limitParallelRequests = limitParallelRequests
+	lb.forcedMaxParallelRequests = limitParallelRequests
 }
 
 // cpuMock and memMock are interfaces for mocking the CPU and Memory information in the tests
@@ -108,6 +110,8 @@ func (lb *LoadBalancer) CalculateDesiredNumberOfRequestsCPU(numberOfExecutedFunc
 		avgPercentage += percentage
 	}
 	avgPercentage /= float64(len(cpuLoadPercentageInfo))
+
+	fmt.Println("the number of executed function calls is", numberOfExecutedFunctionCalls)
 
 	return int(float64(numberOfExecutedFunctionCalls) * (lb.targetLoadCPU / avgPercentage))
 }
@@ -176,7 +180,11 @@ func (lb *LoadBalancer) AutoBalance() {
 				avgDesiredNumber = lb.limitParallelRequests
 			}
 
-			lb.maxParallelRequests.Store(int32(avgDesiredNumber))
+			if lb.forcedMaxParallelRequests != 0 {
+				lb.maxParallelRequests.Store(int32(lb.forcedMaxParallelRequests))
+			} else {
+				lb.maxParallelRequests.Store(int32(avgDesiredNumber))
+			}
 			fmt.Printf("The maxProcessingRequests was set to %d\n", avgDesiredNumber)
 			return
 		}

@@ -10,11 +10,11 @@ export const options = {
   
         executor: 'per-vu-iterations',
   
-        vus: 15,
+        vus: 16,
   
-        iterations: 20,
+        iterations: 30,
   
-        maxDuration: '30s',
+        maxDuration: '15min',
   
       },
   
@@ -27,17 +27,15 @@ export default function () {
   const vanilla = {
     method: 'POST',
     url: URL,
-    body: "5000000",
     params: {
-      headers: { "X-Nuclio-Function-Name": 'vanilla' },
+      headers: { "X-Nuclio-Function-Name": 'vanilla',  "MAX": "5000000"},
     },
   };
   const second = {
     method: 'POST',
     url: URL,
-    body: "5000000",
     params: {
-      headers: { "X-Nuclio-Function-Name": 'second' },
+      headers: { "X-Nuclio-Function-Name": 'second',  "MAX": "2500000"},
     },
   };
 

@@ -78,10 +78,12 @@ func (bns *BaseNexusScheduler) Unpause(functionName string) {
 
 // CallSynchronized calls the function synchronously on the default nuclio endpoint
 func (bns *BaseNexusScheduler) CallSynchronized(nexusItem *structs.NexusItem) {
-	bns.evaluateInvocation(nexusItem)
+	// bns.evaluateInvocation(nexusItem)
+	utils.SetEvaluationHeaders(nexusItem.Request, string(bns.Name))
 	newRequest := utils.TransformRequestToClientRequest(nexusItem.Request)
 
-	fmt.Println("Sending request to Nuclio:", newRequest.Header)
+	fmt.Print("HEADER: ", newRequest.Header)
+
 	_, err := bns.client.Do(newRequest)
 	if err != nil {
 		fmt.Println("Error sending request to Nuclio:", err)

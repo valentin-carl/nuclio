@@ -27,6 +27,7 @@ import (
 	"github.com/nuclio/nuclio/pkg/common/headers"
 	"github.com/nuclio/nuclio/pkg/dashboard"
 	nexusCommon "github.com/nuclio/nuclio/pkg/nexus/common/models/structs"
+	"github.com/nuclio/nuclio/pkg/nexus/common/utils"
 	"github.com/nuclio/nuclio/pkg/opa"
 	"github.com/nuclio/nuclio/pkg/platform"
 	"github.com/nuclio/nuclio/pkg/restful"
@@ -94,6 +95,8 @@ func (tr *invocationResource) handleRequest(responseWriter http.ResponseWriter, 
 	}
 
 	skipTLSVerification := strings.ToLower(request.Header.Get(headers.SkipTLSVerification)) == "true"
+
+	utils.SetEvaluationHeaders(request, "")
 
 	if processDeadline := strings.ToLower(request.Header.Get(headers.ProcessDeadline)); processDeadline != "" {
 		deadline := common.GetDeadlineTime(processDeadline)

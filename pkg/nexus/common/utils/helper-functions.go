@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/nuclio/nuclio/pkg/common/headers"
 	"github.com/nuclio/nuclio/pkg/nexus/common/models"
@@ -43,4 +44,14 @@ func TransformRequestToClientRequest(nexusItemRequest *http.Request) (newRequest
 
 	// fmt.Println("new Request: ", newRequest)
 	return
+}
+
+// SetEvaluationHeaders sets the headers for the evaluation request
+func SetEvaluationHeaders(req *http.Request, schedulerName string) {
+	if schedulerName == "" || req.Header.Get(headers.INCOMING) == "" {
+		req.Header.Set(headers.INCOMING, time.Now().Format(time.RFC3339))
+	} else {
+		req.Header.Set(headers.SYNC_PROCESSING, time.Now().Format(time.RFC3339))
+		req.Header.Set(headers.SCHEDULER_NAME, schedulerName)
+	}
 }

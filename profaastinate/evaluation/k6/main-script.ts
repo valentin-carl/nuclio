@@ -28,6 +28,8 @@ export enum HeaderKey {
     FUNCTION_NAME = "x-nuclio-function-name",
     FUNCTION_NAMESPACE = "x-nuclio-function-namespace",
     ASYNC_DEADLINE = "x-profaastinate-process-deadline",
+    ASYNC_INCOMING = "x-profaastinate-async-incoming",
+    SYNC_INVOCATION = "x-profaastinate-async-invocation"
 }
 
 export function buildHeader(functionName: string, deadline?: number, namespace?: string): { [name: string]: string } {

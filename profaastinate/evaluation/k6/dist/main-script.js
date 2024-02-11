@@ -34,6 +34,8 @@ var HeaderKey;
     HeaderKey["FUNCTION_NAME"] = "x-nuclio-function-name";
     HeaderKey["FUNCTION_NAMESPACE"] = "x-nuclio-function-namespace";
     HeaderKey["ASYNC_DEADLINE"] = "x-profaastinate-process-deadline";
+    HeaderKey["ASYNC_INCOMING"] = "x-profaastinate-async-incoming";
+    HeaderKey["SYNC_INVOCATION"] = "x-profaastinate-async-invocation";
 })(HeaderKey || (exports.HeaderKey = HeaderKey = {}));
 function buildHeader(functionName, deadline, namespace) {
     let headers = {};

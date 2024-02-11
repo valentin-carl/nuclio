@@ -1,9 +1,13 @@
 package nexus
 
 import (
-	bulk "github.com/nuclio/nuclio/pkg/nexus/bulk/scheduler"
+	"log"
+	"sync"
+	"sync/atomic"
+	"time"
+
 	"github.com/nuclio/nuclio/pkg/nexus/common/env"
-	"github.com/nuclio/nuclio/pkg/nexus/common/load-balancer"
+	load_balancer "github.com/nuclio/nuclio/pkg/nexus/common/load-balancer"
 	"github.com/nuclio/nuclio/pkg/nexus/common/models"
 	"github.com/nuclio/nuclio/pkg/nexus/common/models/config"
 	"github.com/nuclio/nuclio/pkg/nexus/common/models/interfaces"
@@ -11,11 +15,8 @@ import (
 	queue "github.com/nuclio/nuclio/pkg/nexus/common/queue"
 	"github.com/nuclio/nuclio/pkg/nexus/common/scheduler"
 	deadline "github.com/nuclio/nuclio/pkg/nexus/deadline/scheduler"
-	"github.com/nuclio/nuclio/pkg/nexus/elastic-deploy"
-	"log"
-	"sync"
-	"sync/atomic"
-	"time"
+	elastic_deploy "github.com/nuclio/nuclio/pkg/nexus/elastic-deploy"
+	idle "github.com/nuclio/nuclio/pkg/nexus/idle/scheduler"
 )
 
 // Nexus is the main core of the profaastinate system
@@ -59,18 +60,19 @@ func Initialize() (nexus *Nexus) {
 	nexus.deployer = elastic_deploy.NewProElasticDeployDefault(nexus.envRegistry)
 	nexus.deployer.Initialize()
 
-	nexus.loadBalancer = load_balancer.NewLoadBalancer(&maxParallelRequests, &channel, 10*time.Second, 90.0, 90.0)
+	nexus.loadBalancer = load_balancer.NewLoadBalancer(&maxParallelRequests, &channel, 5*time.Second, 50.0, 0)
 	nexus.loadBalancer.Initialize()
 
 	defaultBaseScheduler := scheduler.NewDefaultBaseNexusScheduler(&nexusQueue, &nexusConfig, nexus.deployer, &channel)
 
 	deadlineScheduler := deadline.NewDefaultScheduler(defaultBaseScheduler)
-	bulkScheduler := bulk.NewDefaultScheduler(defaultBaseScheduler)
+	//bulkScheduler := bulk.NewDefaultScheduler(defaultBaseScheduler)
+	idleScheduler := idle.NewDefaultScheduler(defaultBaseScheduler)
 
 	nexus.schedulers = map[string]interfaces.INexusScheduler{
 		"deadline": deadlineScheduler,
-		"bulk":     bulkScheduler,
-		// "idle": idleScheduler
+		//"bulk":     bulkScheduler,
+		"idle": idleScheduler,
 	}
 
 	return

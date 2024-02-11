@@ -67,8 +67,13 @@ const (
 	Arguments      = "X-Nuclio-Arguments"
 
 	// Profaastinate headers
-	ProfaastinateHeader = "X-Profaastinate-"
-	ProcessDeadline     = ProfaastinateHeader + "Process-Deadline"
+	profaastinateHeader = "X-Profaastinate-"
+	ProcessDeadline     = profaastinateHeader + "Process-Deadline"
+
+	// Evaluation headers
+	INCOMING        = profaastinateHeader + "Incoming"
+	SYNC_PROCESSING = profaastinateHeader + "Sync-Processing"
+	SCHEDULER_NAME  = profaastinateHeader + "Scheduler-Name"
 )
 
 func IsNuclioHeader(headerName string) bool {

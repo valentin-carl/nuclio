@@ -13,18 +13,32 @@ import (
 )
 
 const (
+	// URL paths
 	EVALUATION_INVOCATION     = "/evaluation/invocation"
 	EVALUATION_HEADERS        = "/evaluation/headers"
-	SCHEDULER_NAME            = "x-profaastinate-scheduler-name"
 	EVALUATION_FUNCTION_START = "/evaluation/function-start"
 	EVALUATION_FUNCTION_END   = "/evaluation/function-end"
-	ASYNC_DEADLINE            = "x-profaastinate-process-deadline"
-	FUNCTION_NAME             = "x-nuclio-function-name"
-	FUNCTION_STATUS           = "x-nuclio-function-status" // start, end, invocation
-	RELATIVE_PATH_LOG_PATH    = "profaastinate/evaluation/counter-backend/logs"
-	ASYNC_EVALUATION_NAME     = "async.log"
-	NORMAL_EVALUATION_NAME    = "normal.log"
-	CPU_USAGE                 = "cpu-usage.log"
+
+	// Headers
+	profaastinateHeader = "X-Profaastinate-"
+	FUNCTION_NAME       = "X-Nuclio-Function-Name"
+	FUNCTION_STATUS     = "X-Nuclio-Function-Status" // invocation, start, end TODO - brauchen wir das?
+
+	// Evaluation Headers
+	PROCESS_DEADLINE = profaastinateHeader + "Process-Deadline"
+	SCHEDULER_NAME   = profaastinateHeader + "Scheduler-Name"
+	INCOMING         = profaastinateHeader + "Incoming"
+	SYNC_PROCESSING  = profaastinateHeader + "Sync-Processing"
+	EXEC_START       = profaastinateHeader + "Exec-Start"
+	EXEC_STOP        = profaastinateHeader + "Exec-Stop"
+
+	// Log paths
+	RELATIVE_PATH_LOG_PATH = "profaastinate/evaluation/data-analysis/logs"
+
+	// Log file names
+	ASYNC_EVALUATION_NAME  = "async.log"
+	NORMAL_EVALUATION_NAME = "normal.log"
+	CPU_USAGE              = "cpu-usage.log"
 )
 
 // Counter struct holds the count and a mutex to ensure safe access
@@ -89,22 +103,29 @@ func (c *Counter) handleFunctionInvocations(w http.ResponseWriter, r *http.Reque
 	}
 }
 
-func logToFile(deadline string, functionName string, schedulerName string) {
-	if deadline == "" {
+func logToFile(functionName, schedulerName, asyncIncoming, syncProcessing, execStart, execStop string) {
+
+	if schedulerName == "" {
 		log.SetOutput(logFile[NORMAL_EVALUATION_NAME])
-		log.Printf("%s", functionName)
+		log.Printf("%s - %s - %s ", functionName, execStart, execStop)
+
 	} else {
 		log.SetOutput(logFile[ASYNC_EVALUATION_NAME])
-		log.Printf("%s - %s", functionName, schedulerName)
+		log.Printf("%s - %s - %s - %s - %s - %s", functionName, schedulerName, asyncIncoming, syncProcessing, execStart, execStop)
 	}
 }
 
 func (c *Counter) handleFunctionHeaders(w http.ResponseWriter, r *http.Request) {
 	functionName := r.Header.Get(FUNCTION_NAME)
-	deadline := r.Header.Get(ASYNC_DEADLINE)
 	schedulerName := r.Header.Get(SCHEDULER_NAME)
+	asyncIncoming := r.Header.Get(INCOMING)
+	syncProcessing := r.Header.Get(SYNC_PROCESSING)
+	execStart := r.Header.Get(EXEC_START)
+	execStop := r.Header.Get(EXEC_STOP)
 
-	logToFile(deadline, functionName, schedulerName)
+	fmt.Printf("%v\n", r.Header)
+
+	logToFile(functionName, schedulerName, asyncIncoming, syncProcessing, execStart, execStop)
 }
 
 func main() {
@@ -130,7 +151,7 @@ func main() {
 	http.HandleFunc(EVALUATION_HEADERS, counter.handleFunctionHeaders)
 
 	// Log CPU usage
-	//go logCPUUsage()
+	go logCPUUsage()
 
 	// Start the server
 	fmt.Println("Server listening on :8888")
