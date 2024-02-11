@@ -123,8 +123,6 @@ func (c *Counter) handleFunctionHeaders(w http.ResponseWriter, r *http.Request) 
 	execStart := r.Header.Get(EXEC_START)
 	execStop := r.Header.Get(EXEC_STOP)
 
-	fmt.Printf("%v\n", r.Header)
-
 	logToFile(functionName, schedulerName, asyncIncoming, syncProcessing, execStart, execStop)
 }
 
