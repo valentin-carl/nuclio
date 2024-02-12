@@ -7,26 +7,46 @@ import seaborn as sns
 import numpy as np
 import matplotlib.dates as mdates
 from matplotlib.ticker import MaxNLocator
+from enum import Enum
+import matplotlib.lines as mlines
+
+
+class Modes(Enum):
+    NORMAL = 'normal'
+    ASYNC = 'async'
+
+
+class Scheduler(Enum):
+    DEADLINE = 'deadline'
+    IDLE = 'idle'
+    BULK = 'bulk'
 
 
 class ChartFactory:
     def __init__(self):
         self.fig, self.ax = plt.subplots()
 
-        self.custom_colors = {
-            "deadline": "#15F5BA",
-            "idle": "#836FFF",
-            "bulk": "#E26EE5",
-            "async": "#E26EE5",
-            "normal": "#836FFF",
-        }
 
+        self.custom_colors = {
+            Scheduler.DEADLINE.value: "#15F5BA",
+            Scheduler.IDLE.value: "#836FFF",
+            Scheduler.BULK.value: "#E26EE5",
+            Modes.ASYNC.value: "#D16BA5",
+            f"{Modes.ASYNC.value}_cpu": "#D16BA5",
+            f"{Modes.ASYNC.value}_requests": "#FF8F80",
+            Modes.NORMAL.value: "#86A8E7",
+            f"{Modes.NORMAL.value}_cpu": "#86A8E7",
+            f"{Modes.NORMAL.value}_requests": "#00DBED",
+
+            "cpu_usage": "#FF9671",
+        }
         self.interval = '50s'
 
         self.modes = ['async', 'normal']
 
-    def finalize_and_save_chart(self, title, filename):
-        plt.title(title)
+    def finalize_and_save_chart(self, filename, title = ""):
+        if title:
+            plt.title(title)
         filename = f"./charts/{filename}"
         if os.path.isfile(filename):
             os.remove(filename)
@@ -49,13 +69,13 @@ class ChartFactory:
         colors = [self.custom_colors.get(x, "#333333") for x in labels]
         self.ax.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=90, colors=colors)
         self.ax.axis('equal')
-        self.finalize_and_save_chart(title, filename)
+        self.finalize_and_save_chart(filename, title)
 
     def create_histogram(self, data, title, filename):
         df = pd.DataFrame(list(data.items()), columns=['scheduler_type', 'Count'])
         palette = [self.custom_colors.get(x) for x in df['scheduler_type'].unique()]
         sns.barplot(x='scheduler_type', y='Count', data=df, palette=palette)
-        self.finalize_and_save_chart(title, filename)
+        self.finalize_and_save_chart(filename, title)
 
     def create_line_chart(self, data, title, filename, include_scheduler=True):
         fig, ax1 = plt.subplots()
@@ -71,17 +91,17 @@ class ChartFactory:
             resampled_df = pd.concat([resampled_deadline_df, resampled_non_deadline_df], ignore_index=True)
             sns.lineplot(x='timestamp', y='requests', hue='scheduler_type', data=resampled_df, ax=ax1,
                          palette=self.custom_colors)
+            ax1.set_ylim(0, 100)
         else:
             resampled_df = data.set_index('timestamp').resample(self.interval).size().reset_index(name='requests')
-            sns.lineplot(x='timestamp', y='requests', data=resampled_df, ax=ax1, color='#E26EE5')
+            sns.lineplot(x='timestamp', y='requests', data=resampled_df, ax=ax1, color=self.custom_colors['normal'])
 
-        plt.legend(title='Legend', loc='lower left')
+        plt.legend(title='Legend', loc='upper left')
         ax1.set_xlabel('Timestamp')
         ax1.set_ylabel('Requests per Minute')
         ax1.tick_params(axis='y')
         ax1.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
         ax1.xaxis.set_major_locator(MaxNLocator(6))
-
 
         data['cpu_usage'] = pd.to_numeric(data['cpu_usage'], errors='coerce')
         data = data.set_index('timestamp')
@@ -89,15 +109,15 @@ class ChartFactory:
         resampled_cpu_df = data['cpu_usage'].resample('min').mean().reset_index()
 
         ax2 = ax1.twinx()
-        sns.lineplot(x='timestamp', y='cpu_usage', label='CPU Usage', data=resampled_cpu_df, ax=ax2, color='#E26EE5')
+        sns.lineplot(x='timestamp', y='cpu_usage', label='CPU Usage', data=resampled_cpu_df, ax=ax2, color=self.custom_colors['cpu_usage'])
         ax2.set_ylabel('CPU Usage (%)')
         ax2.tick_params(axis='y')
         ax2.set_ylim(0, 100)
+        ax1.set_xlim(resampled_df['timestamp'].min(), resampled_df['timestamp'].max())
 
-        plt.title(title)
         plt.xticks(rotation=180)
 
-        self.finalize_and_save_chart(title, filename)
+        self.finalize_and_save_chart(filename, title)
 
     def create_timeline_chart(self, data, title, filename):
         avg_durations = data.groupby('scheduler_type').agg({
@@ -110,20 +130,19 @@ class ChartFactory:
                                                   value_vars=['async_duration', 'sync_duration', 'exec_duration'],
                                                   var_name='Phase', value_name='Average Duration')
 
-        # Plotting
         sns.barplot(x='Phase', y='Average Duration', hue='scheduler_type', data=avg_durations_melted, palette=self.custom_colors)
         plt.xticks(rotation=45)
-        self.finalize_and_save_chart(title, filename)
+        self.finalize_and_save_chart(filename, title)
 
-    def create_cpu_histogram(self, async_data, normal_data, title, filename):
+    def create_cpu_histogram(self, async_data, normal_data, filename):
         async_avg_cpu = async_data['cpu_usage'].mean()
         normal_avg_cpu = normal_data['cpu_usage'].mean()
         df = pd.DataFrame({'Mode': self.modes, 'Average CPU Usage': [async_avg_cpu, normal_avg_cpu]})
 
         sns.barplot(x='Mode', y='Average CPU Usage', data=df, palette=self.custom_colors)
-        self.finalize_and_save_chart(title, filename)
+        self.finalize_and_save_chart(filename)
 
-    def create_average_deviation_histogram(self, async_data, normal_data, title, filename):
+    def create_average_deviation_histogram(self, async_data, normal_data, filename):
         async_avg_req = async_data.groupby(pd.Grouper(key='timestamp', freq=self.interval)).size().mean()
         normal_avg_req = normal_data.groupby(pd.Grouper(key='timestamp', freq=self.interval)).size().mean()
 
@@ -136,10 +155,9 @@ class ChartFactory:
         })
 
         sns.barplot(x='Mode', y='Average Absolute Deviation', data=df, palette=self.custom_colors)
-        plt.title(title)
-        self.finalize_and_save_chart(title, filename)
+        self.finalize_and_save_chart(filename)
 
-    def create_execution_time_chart(self, async_data, normal_data, title, filename):
+    def create_execution_time_chart(self, async_data, normal_data, filename):
         async_avg_exec = async_data['exec_duration'].mean()
         normal_avg_exec = normal_data['exec_duration'].mean()
 
@@ -150,9 +168,9 @@ class ChartFactory:
 
         sns.barplot(x='Mode', y='Average Execution Time', data=df, palette=self.custom_colors)
         plt.xticks(rotation=45)
-        self.finalize_and_save_chart(title, filename)
+        self.finalize_and_save_chart(filename)
 
-    def create_requests_per_minute_chart(self, async_data, normal_data, title, filename):
+    def create_requests_per_minute_chart(self, async_data, normal_data, filename):
         async_avg_req = async_data.groupby(pd.Grouper(key='timestamp', freq='1Min')).size().mean()
         normal_avg_req = normal_data.groupby(pd.Grouper(key='timestamp', freq='1Min')).size().mean()
 
@@ -163,7 +181,53 @@ class ChartFactory:
 
         sns.barplot(x='Mode', y='Average Requests per Minute', data=df, palette=self.custom_colors)
         plt.xticks(rotation=45)
-        self.finalize_and_save_chart(title, filename)
+        self.finalize_and_save_chart(filename)
+
+    def create_line_chart_comparison(self, async_data, normal_data, title, filename):
+        fig, ax1 = plt.subplots()
+
+        async_resampled = async_data.set_index('timestamp').resample(self.interval).agg({'cpu_usage': 'mean'})
+        async_resampled['requests'] = async_data.set_index('timestamp').resample(self.interval).size()
+        async_resampled['Mode'] = Modes.ASYNC.value
+        async_resampled = async_resampled.reset_index(drop=True)
+
+        normal_resampled = normal_data.set_index('timestamp').resample(self.interval).agg({'cpu_usage': 'mean'})
+        normal_resampled['requests'] = normal_data.set_index('timestamp').resample(self.interval).size()
+        normal_resampled['Mode'] = Modes.NORMAL.value
+        normal_resampled = normal_resampled.reset_index(drop=True)
+
+        combined_data = pd.concat([async_resampled, normal_resampled]).reset_index()
+
+        cpu_palette = {Modes.ASYNC.value: self.custom_colors[f"{Modes.ASYNC.value}_cpu"],
+                       Modes.NORMAL.value: self.custom_colors[f"{Modes.NORMAL.value}_cpu"]}
+        request_palette = {Modes.ASYNC.value: self.custom_colors[f"{Modes.ASYNC.value}_requests"],
+                           Modes.NORMAL.value: self.custom_colors[f"{Modes.NORMAL.value}_requests"]}
+
+        sns.lineplot(x='index', y='requests', hue='Mode', data=combined_data, ax=ax1, palette=request_palette)
+
+        ax2 = ax1.twinx()
+        sns.lineplot(x='index', y='cpu_usage', hue='Mode', data=combined_data, ax=ax2, palette=cpu_palette, legend=False)
+        ax2.set_ylabel('CPU Usage (%)')
+
+        legend_elements = [
+            mlines.Line2D([], [], color=self.custom_colors[f'{Modes.ASYNC.value}_requests'], label='Async Req.'),
+            mlines.Line2D([], [], color=self.custom_colors[f'{Modes.NORMAL.value}_requests'], label='Normal Req.'),
+            mlines.Line2D([], [], color=self.custom_colors[Modes.ASYNC.value], label='Async CPU'),
+            mlines.Line2D([], [], color=self.custom_colors[Modes.NORMAL.value], label='Normal CPU')
+        ]
+        ax1.legend(handles=legend_elements, loc='upper right', title='Legend')
+
+        ax1.set_xlabel('Relative Time Index')
+        ax1.set_ylabel('Requests per Interval')
+
+        plt.title(title)
+        plt.xticks(rotation=45)
+        fig.tight_layout()
+        ax2.set_ylim(0, normal_resampled['requests'].max())
+        ax1.set_xlim(0, 18)
+        ax1.xaxis.set_major_locator(MaxNLocator(5))
+
+        self.finalize_and_save_chart(filename, title)
 
 
 def read_log_file(file_path):
@@ -271,8 +335,9 @@ chart_factory.create_chart('line', async_dataframe, 'Requests per Second by Sche
 
 chart_factory.create_timeline_chart(async_dataframe, 'Phase Durations by Scheduler', 'async/timeline_chart')
 chart_factory.create_line_chart(normal_dataframe, 'Requests per Second', 'normal/line_chart.png', include_scheduler=False)
+chart_factory.create_line_chart_comparison(async_dataframe, normal_dataframe, 'Requests per Second', 'comparison/line_chart.png')
 
-chart_factory.create_cpu_histogram(async_dataframe, normal_dataframe, 'Average CPU Usage Comparison', 'comparison/cpu_histogram.png')
-chart_factory.create_execution_time_chart(async_dataframe, normal_dataframe, 'Average Execution Time Comparison', 'comparison/execution_time_chart.png')
-chart_factory.create_requests_per_minute_chart(async_dataframe, normal_dataframe, 'Average Requests per Minute Comparison', 'comparison/requests_per_minute_chart.png')
-chart_factory.create_average_deviation_histogram(async_dataframe, normal_dataframe, 'Requests Deviation Histogram', 'comparison/requests_deviation_histogram.png')
+chart_factory.create_cpu_histogram(async_dataframe, normal_dataframe, 'comparison/cpu_histogram.png')
+chart_factory.create_execution_time_chart(async_dataframe, normal_dataframe,  'comparison/execution_time_chart.png')
+chart_factory.create_requests_per_minute_chart(async_dataframe, normal_dataframe,  'comparison/requests_per_minute_chart.png')
+chart_factory.create_average_deviation_histogram(async_dataframe, normal_dataframe, 'comparison/requests_deviation_histogram.png')
