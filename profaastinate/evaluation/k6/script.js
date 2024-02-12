@@ -10,39 +10,64 @@ export const options = {
   
         executor: 'per-vu-iterations',
   
-        vus: 16,
+        vus: 4,
   
-        iterations: 30,
+        iterations: 100,
   
-        maxDuration: '15min',
+        maxDuration: '15m',
   
       },
   
     },
 };
 
+
 const URL = 'http://localhost:8070/api/function_invocations';
 
-export default function () {
+let count = 0
+
+ export default function () {
   const vanilla = {
     method: 'POST',
     url: URL,
     params: {
-      headers: { "X-Nuclio-Function-Name": 'vanilla',  "MAX": "5000000"},
-    },
-  };
-  const second = {
-    method: 'POST',
-    url: URL,
-    params: {
-      headers: { "X-Nuclio-Function-Name": 'second',  "MAX": "2500000"},
+      headers: { "X-Nuclio-Function-Name": 'vanilla', "X-Profaastinate-Process-Deadline": (count % 12 == 0 ) ? "5000" : "4000000" ,  "MAX": "5000000"},
     },
   };
 
+    const second = {
+      method: 'POST',
+      url: URL,
+      params: {
+        headers: { "X-Nuclio-Function-Name": 'second', "X-Profaastinate-Process-Deadline": ( count % 6 == 0 ) ? "5000" : "4000000", "MAX": "4000000"},
+      }
+    }
 
-  const res = http.batch([vanilla, second]);
+    const vanilla_2 = {
+      method: 'POST',
+      url: URL,
+      params: {
+        headers: { "X-Nuclio-Function-Name": 'vanilla', "X-Profaastinate-Process-Deadline": ( count % 12 == 0 ) ? "5000" : "4000000",  "MAX": "5000000"},
+      },
+    };
   
+      const second_2 = {
+        method: 'POST',
+        url: URL,
+        params: {
+          headers: { "X-Nuclio-Function-Name": 'second', "X-Profaastinate-Process-Deadline":(count % 24 == 0 ) ? "5000" : "4000000", "MAX": "4000000"},
+        }
+      }
 
+
+  const res = http.batch([vanilla, second, vanilla_2, second_2]);
+  
+  if (count < 7)
+    count++
+  else {
+    count++
+    sleep(5)
+  }
 
   check(res[0], { 'status was 200': (r) => r.status == 200 });
 }

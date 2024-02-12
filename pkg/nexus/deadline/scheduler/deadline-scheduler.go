@@ -1,8 +1,10 @@
 package deadline
 
 import (
-	models2 "github.com/nuclio/nuclio/pkg/nexus/common/models"
+	"fmt"
 	"time"
+
+	models2 "github.com/nuclio/nuclio/pkg/nexus/common/models"
 
 	"github.com/nuclio/nuclio/pkg/nexus/common/models/interfaces"
 	"github.com/nuclio/nuclio/pkg/nexus/common/models/structs"
@@ -74,6 +76,7 @@ func (ds *DeadlineScheduler) executeSchedule() {
 			ds.CurrentParallelRequests.Add(1)
 			task := ds.Queue.Pop()
 
+			fmt.Println("len(ds.Queue):", ds.Queue.Len())
 			go func(taskInFunction *structs.NexusItem) {
 				defer ds.CurrentParallelRequests.Add(-1)
 				ds.Unpause(taskInFunction.Name)

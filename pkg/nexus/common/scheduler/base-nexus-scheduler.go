@@ -82,8 +82,6 @@ func (bns *BaseNexusScheduler) CallSynchronized(nexusItem *structs.NexusItem) {
 	utils.SetEvaluationHeaders(nexusItem.Request, string(bns.Name))
 	newRequest := utils.TransformRequestToClientRequest(nexusItem.Request)
 
-	fmt.Print("HEADER: ", newRequest.Header)
-
 	_, err := bns.client.Do(newRequest)
 	if err != nil {
 		fmt.Println("Error sending request to Nuclio:", err)
