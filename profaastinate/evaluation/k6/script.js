@@ -10,9 +10,9 @@ export const options = {
   
         executor: 'per-vu-iterations',
   
-        vus: 4,
+        vus: 1,
   
-        iterations: 100,
+        iterations: 800,
   
         maxDuration: '15m',
   
@@ -26,12 +26,14 @@ const URL = 'http://localhost:8070/api/function_invocations';
 
 let count = 0
 
+
+
  export default function () {
   const vanilla = {
     method: 'POST',
     url: URL,
     params: {
-      headers: { "X-Nuclio-Function-Name": 'vanilla', "X-Profaastinate-Process-Deadline": (count % 12 == 0 ) ? "5000" : "4000000" ,  "MAX": "5000000"},
+      headers: { "X-Nuclio-Function-Name": 'vanilla', "X-Profaastinate-Process-Deadline": count > 400 && Math.random() >= 0.3 ? "5000" : "4000000" ,  "MAX": "5000000"},
     },
   };
 
@@ -39,34 +41,18 @@ let count = 0
       method: 'POST',
       url: URL,
       params: {
-        headers: { "X-Nuclio-Function-Name": 'second', "X-Profaastinate-Process-Deadline": ( count % 6 == 0 ) ? "5000" : "4000000", "MAX": "4000000"},
+        headers: { "X-Nuclio-Function-Name": 'second', "X-Profaastinate-Process-Deadline": count > 400 && Math.random() >= 0.4 ? "5000" : "4000000", "MAX": "4000000"},
       }
     }
 
-    const vanilla_2 = {
-      method: 'POST',
-      url: URL,
-      params: {
-        headers: { "X-Nuclio-Function-Name": 'vanilla', "X-Profaastinate-Process-Deadline": ( count % 12 == 0 ) ? "5000" : "4000000",  "MAX": "5000000"},
-      },
-    };
-  
-      const second_2 = {
-        method: 'POST',
-        url: URL,
-        params: {
-          headers: { "X-Nuclio-Function-Name": 'second', "X-Profaastinate-Process-Deadline":(count % 24 == 0 ) ? "5000" : "4000000", "MAX": "4000000"},
-        }
-      }
 
-
-  const res = http.batch([vanilla, second, vanilla_2, second_2]);
+  const res = http.batch([vanilla, second]);
   
-  if (count < 7)
+  if (count < 400 || count % 5 != 0 )
     count++
   else {
     count++
-    sleep(5)
+    sleep(9)
   }
 
   check(res[0], { 'status was 200': (r) => r.status == 200 });
