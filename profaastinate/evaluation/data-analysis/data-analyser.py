@@ -331,10 +331,10 @@ log_counts = get_scheduler_count(async_dataframe)
 
 chart_factory.create_chart('pie', log_counts, 'Log Type Distribution', 'async/pie_chart.png')
 chart_factory.create_chart('histogram', log_counts, 'Log Type Distribution', 'async/histogram_chart.png')
-chart_factory.create_chart('line', async_dataframe, 'Requests per Second by Scheduler', 'async/line_chart.png')
+chart_factory.create_chart('line', async_dataframe, 'Activity Monitor', 'async/line_chart.png')
 
 chart_factory.create_timeline_chart(async_dataframe, 'Phase Durations by Scheduler', 'async/timeline_chart')
-chart_factory.create_line_chart(normal_dataframe, 'Requests per Second', 'normal/line_chart.png', include_scheduler=False)
+chart_factory.create_line_chart(normal_dataframe, 'Activity', 'normal/line_chart.png', include_scheduler=False)
 chart_factory.create_line_chart_comparison(async_dataframe, normal_dataframe, 'Requests per Second', 'comparison/line_chart.png')
 
 chart_factory.create_cpu_histogram(async_dataframe, normal_dataframe, 'comparison/cpu_histogram.png')
