@@ -1,0 +1,3 @@
+[submodule "fusionizer"]
+	path = fusionizer
+	url = https://github.com/marvin-steinke/nuclio_fusionizer.git
